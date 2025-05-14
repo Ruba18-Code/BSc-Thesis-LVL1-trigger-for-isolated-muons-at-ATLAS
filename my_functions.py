@@ -234,8 +234,26 @@ def pair_selector(pt,eta,phi,i):
     best_pair_position=diff.index(min(diff)) #This is the position of the best pair 
     invariant_mass_best_pair=res[best_pair_position] #The invariant mass of the best pair
     best_pair=pairs[best_pair_position] #The vector [mu1,mu2] that contains the values of pt, eta and phi of the best pair
+
+ #If there's only one pair
+ if (len(eta[i]) == len(phi[i]) == len(pt[i]) and len(eta[i])==2):
+    for j in range(len(eta[i])):
+        
+        pt1, pt2 = pt[i]
+        eta1, eta2 = eta[i]
+        phi1, phi2 = phi[i]
+
+        best_pair_position=0 
+        invariant_mass_best_pair=invariant_mass(pt1,eta1,phi1,pt2,eta2,phi2)
+        best_pair=([pt1,eta1,phi1],[pt2,eta2,phi2])
+        
+ #If the length is smaller than 2, then there's no possible pair
+ if (len(eta[i]) == len(phi[i]) == len(pt[i]) and len(eta[i])<2):
+        invariant_mass_best_pair=0
+        best_pair=([0,0,0],[0,0,0])
+ #It returns the value of the invariant mass for the best pair and the values of (mu1,mu2) for the best pair
+ return(invariant_mass_best_pair,best_pair)
     
-    return(invariant_mass_best_pair,best_pair)
 
 def invariant_mass_all_muons2(pt,eta,phi):
 
@@ -296,5 +314,38 @@ def quality_selector(data1, data2 ,value):
     return(ak.Array(selected_data))
 
 #-----------------------------------------------------------------------------------------------
+
+def delta_phi(phi1,phi2):
+
+    #This function aims to compute the value delta phi between two particles
+    #delta_phi=min(abs(phi1-phi2), abs(phi2-phi1))  
+    #phi comes by default in the range [-pi,+pi]
+    #I prefer [0,2pi] so I'll convert the variables first by adding 2pi
+
+    phi1=(phi1+2*np.pi)%(2*np.pi) #adding 2pi and dividing by modulo 2pi ensures that phi is in range [0,2pi)
+    phi2=(phi2+2*np.pi)%(2*np.pi)
+
+    #adding pi and dividing by modulo 2pi ensures that if phi1-phi2 is greater than pi (example: 1.5pi) it will become greater
+    #than 2pi (1.5pi+pi=2.5pi) and therefore the modulo will "remove" 2pi (2.5pi%2pi=0.5pi) giving the smallest difference
+    delta_phi=abs((phi1-phi2+np.pi)%(2*np.pi)-np.pi) #This gives a result between 0 and pi always
+
+    return(delta_phi)
+
+def delta_eta(eta1,eta2):
+
+    #This function aims to compute the value delta eta between two particles
+    #to do so, we simply substract abs(eta1-eta2)
+
+    return(abs(eta1-eta2))
+
+def delta_r(eta1,phi1,eta2,phi2):
+
+    #This function aims to compute delta r ("distance") between two detected particles
+    #it makes use of the other functions, delta eta and delta phi, and simply computes the modulus
+
+    delta_phi=delta_phi(phi1,phi2)
+    delta_eta=delta_eta(eta1,eta2)
+    
+    return(np.sqrt(delta_phi**2+delta_eta**2))
 
 # %%

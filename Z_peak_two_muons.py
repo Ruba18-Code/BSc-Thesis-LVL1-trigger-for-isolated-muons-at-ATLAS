@@ -36,7 +36,7 @@ bins=np.linspace(6*10**4,1.2*10**5)
 colors=['r','b']
 x_label=r"Energy (MeV)"
 y_label="Counts"
-title=r"Z boson invariant mass reconstruction"
+title=r"Z boson invariant mass reconstruction using only 2 muon events"
 label2='Z boson invariant mass'
 labels=[label2]
 coolplot(data,bins,colors,labels,x_label,y_label,title)
@@ -70,7 +70,7 @@ bins=np.linspace(6*10**4,1.2*10**5)
 colors=['r','b']
 x_label=r"Energy (MeV)"
 y_label="Counts"
-title=r"Z boson invariant mass reconstruction (only quality 0 events)"
+title=r"Z boson invariant mass reconstruction using only 2 muon events (only quality 0 events)"
 label2='Z boson invariant mass'
 labels=[label2]
 
