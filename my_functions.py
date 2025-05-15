@@ -208,7 +208,7 @@ def pair_selector(pt,eta,phi,i):
  #This function aims to select the "real" pair of muons when an event has more than two muons involved
 
  #Let's hardcode the theoretical value of a Z mass
- ztheo=911880 #MeV
+ ztheo=91188 #MeV
 
  mu=[]
  res=[]
