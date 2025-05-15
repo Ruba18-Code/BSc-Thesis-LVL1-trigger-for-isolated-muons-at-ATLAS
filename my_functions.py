@@ -76,7 +76,7 @@ def histogram2errors(data1, data2, nbins, x_range, x_label, y_label, title_label
 
 def coolplot(data,bins,colors,labels,x_label,y_label,title):
 
-    #This function is designed to create a comparative plot of N sets of data with their respective errorbars included.
+    #This function is designed to create a comparative histogram of N sets of data with their respective errorbars included.
     #Introduce a data vector, that contains one column for each dataset that has to be plotted data=[[set_a],[set_b],...]
     #bins should be a linspace containing np.linspace(start:end, number_of_bins)
     #colors is a vector of colors
@@ -98,7 +98,6 @@ def coolplot(data,bins,colors,labels,x_label,y_label,title):
     error_norm=[]
 
     #Compute the histogram and error for every dataset
-
     for i in range(len(data)):
         hists.append(np.histogram(ak.flatten(data[i], axis=None),bins=bins_overflow)[0])
         error.append(np.sqrt(hists[i]))
@@ -385,5 +384,51 @@ def get_all_delta_r(eta,phi):
         phi1, phi2= b
         dr.append(delta_r(eta1,phi1,eta2,phi2))
     return(np.array(dr))
+
+def get_all_delta_phi(phi):    
+    dphi=[]
+
+    for a in phi:
+        phi1, phi2= a
+        dphi.append(delta_phi(phi1,phi2))
+    return(np.array(dphi))
+
+def get_all_delta_eta(eta):    
+    deta=[]
+
+    for a in eta:
+        eta1, eta2= a
+        deta.append(delta_eta(eta1,eta2))
+    return(np.array(deta))
+
+#---------------------------------------------------------------------------
+
+def rate_calculator(data,cut,scaling_factor):
+
+    #This function aims to compute the rate of events that are above a certain cut
+    #Example: our data is muon energy, we say cut=10000MeV, then the function will return
+    #the fraction of events that are above this cut (rate) and an array with these events (aux)
+
+    #moreover, 'scaling' allows us to scale the rate (by default between 0 and 1), choose scaling=1 if no scaling is needed
+    #in my case, scaling=40*10⁶*(2340/3564) since this is the frequency of filled bunch crossings at ATLAS
+
+    #Since there may be empty values in the array (like: ([1,2],4,[],1)), remove them because they destroy the rate
+    #ak.num(data) checks the lenght of the elements, if the length is 0, that means the element is empty []
+    #so this operation selects only non-empty elements
+
+    data = data[ak.num(data) > 0]
+
+    #Creates a boolean mask that contains 'True' if the data is above the cut
+    data_above_cut = ak.any(data >= cut, axis=-1)
+
+    #Apply boolean mask to extract the elements related to 'True'
+    aux = data[data_above_cut]
+    
+    # Calculate the rate
+    rate = len(aux) / len(data)
+    rate=rate*scaling_factor
+
+    return rate, aux
+
 
 # %%
