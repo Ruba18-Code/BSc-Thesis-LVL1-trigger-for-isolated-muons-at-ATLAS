@@ -463,4 +463,92 @@ def jTower_handler(tree,name,xmin,xmax,binsize,chunk_size,xlabel,ylabel,title,sh
       plt.show()
       
  return(combined_histogram, steps)
+
+def jTower_selector(tree, name, n):
+
+    #Since jTower is heavy, this function allows to select only one element to not overload our RAM memory
+    #tree is the name of the tree: Muon_ZeroBias or Muon_Zmumu
+    #name is the name of the data: "jTower_eta", "jTower_et_MeV"...
+    #n is the position of the element we want to obtain
+
+   return tree.arrays([name], entry_start=n, entry_stop=n + 1)[name][0]
+
+# %%
+def jTower_muon_pair_maker(tree, name, n , val):
+
+    #This function creates pairs with some data (designed for an eta or phi value) and a jTower array
+
+    #Get the jTower array
+    jTower_array=jTower_selector(tree,name,n)
+
+    res=[]
+    #Create pairs
+    for stuff in jTower_array:
+        tup= [val, stuff]
+        res.append(tup)
+
+    return(res)
+
+# %%
+def one_element_jTower_eta(element,tree, name, n):
+
+    #Computes delta eta for one muon with respect to an entire jTower array with index n 
+    
+    return(get_all_delta_eta(jTower_muon_pair_maker(tree,name,n,element)))
+
+# %%
+def one_element_jTower_phi(element,tree, name, n):
+
+    #Computes delta phi for one muon with respect to an entire jTower array with index n 
+
+    return(get_all_delta_phi(jTower_muon_pair_maker(tree,name,n,element)))
+
+# %%
+def one_element_jTower_dr(element_eta,element_phi,tree_eta,tree_phi, name_eta,name_phi, n):
+
+    #Computes delta r for one muon with respect to an entire jTower array with index n 
+    #Warning: [element_eta.fields[0]] is necessary to turn ak.Record into scalars
+    
+    return(get_all_delta_r(jTower_muon_pair_maker(tree_eta,name_eta,n,element_eta),
+                           jTower_muon_pair_maker(tree_phi,name_phi,n,element_phi)))
+
+# %%
+def one_event_jTower_dr(event_eta,event_phi,tree_eta,tree_phi, name_eta,name_phi, n):
+
+    #Loop over an event to compute the dr between each of the muons of the event and an entire jTower array with index n
+    
+    res=[]
+
+    for i in range(len(event_eta)):
+        res.append(one_element_jTower_dr(event_eta[i],event_phi[i],tree_eta,tree_phi, name_eta,name_phi, n))
+    return(res)
+
+# %%
+def all_events_jTower_dr(eta_array,phi_array,tree_eta,tree_phi, name_eta,name_phi):
+
+    #Warning: this function may take VERY long to run depending on the amount of data
+
+    #Loop over all events and compute the dr between all muons in the events and their respective jTower array
+
+    #Ensure that all elements are ak.Array and not ak.Record (removes the 'labels' from the data and leaves just the numbers)
+    #This is very important
+    
+    eta_array=eta_array[eta_array.fields[0]]
+    phi_array=phi_array[phi_array.fields[0]]
+
+    #It's important that the result is returned as an ak.Array (otherwise it would be a list which is not what we want)
+
+    #The following syntax is a bit strange here but it's the most efficient. If the loop was outside, we'd need an extra vector,
+    #like in the example below (commented):
+
+        #res=[] <-----UNNECESSARY ASSIGNMENT
+        # for i in range(len(eta_array)):
+        #     res.append(one_event_jTower_dr(eta_array[i],phi_array[i],tree_eta,tree_phi, name_eta,name_phi, i))
+        # return(ak.Array(res))
+
+    #Here everything is done at once
+    return ak.Array(
+        [one_event_jTower_dr(eta_array[i], phi_array[i], tree_eta, tree_phi, name_eta, name_phi, i)
+        for i in range(len(eta_array))])
+
 # %%
