@@ -92,8 +92,6 @@ def coolplot(data,bins,colors,labels,x_label,y_label,title):
 
     hists=[]
     error=[]
-    bottom=[]
-    total=[]
     hists_norm=[]
     error_norm=[]
 
@@ -424,5 +422,43 @@ def rate_calculator(data,cut,scaling_factor):
 
     return rate, aux
 
+#---------------------------------------------------------------------------------------
 
+def jTower_handler(tree,name,xmin,xmax,binsize,chunk_size,xlabel,ylabel,title,showplot):
+
+    #This function aims to manipulate the jTower data
+    #Since these datasets are very large, it divides them into chunks (recommended value: chunk_size= 10000)
+    #It also returns how many chunks have been made ('steps')
+    #Finally, it calculates a histogram with the sum of all the chunk histograms and plots it if showplot is True
+
+    #'name' must be a string of characters like: "muon_et" for instance
+
+ #Initialize these variables
+ steps=0
+ hists=[]
+
+ #Create the x axis 
+ bins=np.arange(xmin,xmax,binsize)
+
+ #Slice the dataset in chunks of size 'chunk_size' and count the amount of chunks 
+ for data in tree.iterate([name], step_size=chunk_size):
+       data = data[name]
+       steps=steps+1
+        #Compute histogram for all chunks
+       hists.append(np.histogram(ak.flatten(data, axis=None),bins)[0])
+
+ #Add the histograms together
+ combined_histogram=sum(hists)
+
+ #Plot the histogram
+ if showplot == True:
+      bins=np.arange(xmin,xmax-binsize,binsize) #There is one bin less, this is necessary
+      plt.plot(bins,combined_histogram,color='b')
+      plt.xlabel(xlabel)
+      plt.ylabel(ylabel)
+      plt.title(title)
+      plt.grid(True,linestyle='--', alpha=0.5)
+      plt.show()
+      
+ return(combined_histogram, steps)
 # %%

@@ -41,16 +41,3 @@ expected_rate=10 #kHz
 frac=x/expected_rate
 
 print("The estimated rate for a threshold of", val, "MeV is", x,"kHz. This is", frac, "times bigger than the expected value,", expected_rate, "kHz")
-
-#For the Zero bias data we do not select quality (because it's noise anyways)
-
-data=[et]
-bins=np.linspace(0,18,18)
-colors=['b']
-x_label=r"Muon transverse energy ($e_T$)"
-y_label="Counts"
-title=r"LVL1 Muon rate vs $e_T$ ATLAS Detector"
-label2='LVL1 Zero Bias'
-labels=[label2]
-
-coolplot(data,bins,colors,labels,x_label,y_label,title)
