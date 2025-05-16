@@ -410,13 +410,7 @@ def rate_calculator(data,cut,scaling_factor):
     #the fraction of events that are above this cut (rate) and an array with these events (aux)
 
     #moreover, 'scaling' allows us to scale the rate (by default between 0 and 1), choose scaling=1 if no scaling is needed
-    #in my case, scaling=40*10⁶*(2340/3564) since this is the frequency of filled bunch crossings at ATLAS
-
-    #Since there may be empty values in the array (like: ([1,2],4,[],1)), remove them because they destroy the rate
-    #ak.num(data) checks the lenght of the elements, if the length is 0, that means the element is empty []
-    #so this operation selects only non-empty elements
-
-    data = data[ak.num(data) > 0]
+    #in my case, scaling=40*10⁶*(2340/3564)Hz since this is the frequency of filled bunch crossings at ATLAS
 
     #Creates a boolean mask that contains 'True' if the data is above the cut
     data_above_cut = ak.any(data >= cut, axis=-1)
