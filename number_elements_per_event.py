@@ -77,6 +77,7 @@ x_label="Number of muons per event"
 y_label="Counts"
 title="Histogram: number of muons per event (only quality 0 events)"
 
+#plot 
 plot_number_elements_per_event(data,bins,colors,labels,x_label,y_label,title)
 
 # %%
