@@ -340,12 +340,14 @@ def quality_selector(data1, data2 ,value):
 
 #-----------------------------------------------------------------------------------------------
 
-def delta_phi(phi1,phi2):
+def delta_phi(pair):
 
     #This function aims to compute the value delta phi between two particles
     #delta_phi=min(abs(phi1-phi2), abs(phi2-phi1))  
     #phi comes by default in the range [-pi,+pi]
     #I prefer [0,2pi] so I'll convert the variables first by adding 2pi
+
+    phi1, phi2 = pair
 
     phi1=np.mod(phi1+2*np.pi, 2*np.pi) #adding 2pi and dividing by modulo 2pi ensures that phi is in range [0,2pi)
     phi2=np.mod(phi2+2*np.pi, 2*np.pi) #I'm using np.mod instead of % because it performs better with large datasets
@@ -357,46 +359,46 @@ def delta_phi(phi1,phi2):
 
     return(np.abs((phi1-phi2+np.pi)%(2*np.pi)-np.pi))
 
-def delta_eta(eta1,eta2):
+def delta_eta(pair):
 
+    eta1, eta2 = pair
     #This function aims to compute the value delta eta between two particles
     #to do so, we simply substract abs(eta1-eta2)
 
     return(np.abs(eta1-eta2))
 
-def delta_r(eta1,phi1,eta2,phi2):
+def delta_r(etapair,phipair):
 
     #This function aims to compute delta r ("distance") between two detected particles
     #it makes use of the other functions, delta eta and delta phi, and simply computes the modulus
 
-    dphi=delta_phi(phi1,phi2)
-    deta=delta_eta(eta1,eta2)
+    dphi=delta_phi(phipair)
+    deta=delta_eta(etapair)
     
     return(np.sqrt(dphi**2+deta**2))
 
-def get_all_delta_r(eta,phi):    
+def get_all_delta_r(etapairs,phipairs):    
     dr=[]
 
-    for a, b in zip(eta,phi):
-        eta1, eta2 = a
-        phi1, phi2= b
-        dr.append(delta_r(eta1,phi1,eta2,phi2))
+    #Compute an array containing the delta r corresponding to each pair
+    for (eta1, eta2), (phi1,phi2) in zip(etapairs,phipairs):
+        dr.append(delta_r([eta1,eta2],[phi1,phi2]))
     return(np.array(dr))
 
-def get_all_delta_phi(phi):    
+def get_all_delta_phi(pairs):    
     dphi=[]
 
-    for a in phi:
-        phi1, phi2= a
-        dphi.append(delta_phi(phi1,phi2))
+    for stuff in pairs:
+        phi1, phi2= stuff
+        dphi.append(delta_phi([phi1,phi2]))
     return(np.array(dphi))
 
-def get_all_delta_eta(eta):    
+def get_all_delta_eta(pairs):    
     deta=[]
 
-    for a in eta:
-        eta1, eta2= a
-        deta.append(delta_eta(eta1,eta2))
+    for stuff in pairs:
+        eta1, eta2= stuff
+        deta.append(delta_eta([eta1,eta2]))
     return(np.array(deta))
 
 #---------------------------------------------------------------------------
