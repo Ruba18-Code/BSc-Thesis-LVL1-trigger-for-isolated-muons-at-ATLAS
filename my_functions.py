@@ -2,7 +2,7 @@
 import uproot
 import numpy as np #math and science package
 import scipy as sp #math and science package
-import awkward as ak #root files are usuallt awkward arrays 
+import awkward as ak #root files are usually awkward arrays 
 import matplotlib.pyplot as plt #plot stuff
 import itertools
 
@@ -551,4 +551,64 @@ def all_events_jTower_dr(eta_array,phi_array,tree_eta,tree_phi, name_eta,name_ph
         [one_event_jTower_dr(eta_array[i], phi_array[i], tree_eta, tree_phi, name_eta, name_phi, i)
         for i in range(len(eta_array))])
 
+def isElement_below_threshold(element, threshold):
+    """
+    Checks if an element (scalar or awkward array) is below a threshold.
+    Returns True if any value is below the threshold.
+    Returns False if the element is empty or None.
+    """
+    #Check if its None to avoid errors
+    if element is None:
+        return False
+    
+    #If it's not an awkward array then convert it to one
+    if not isinstance(element, ak.Array):
+        element = ak.Array([element])
+
+    #Return true only if it's below threshold, False otherwise
+    return ak.any(element <= threshold)
+
+
+def isMuon_below_threshold(muon, threshold):
+    """
+    For a muon (list of elements), return a list of booleans:
+    True where any element is below threshold, False otherwise.
+    """
+    #Check if it's none of empty
+    if muon is None or len(muon) == 0:
+        return ak.Array([False])
+    
+    #For all elements in the muon, execute the isElement function
+    return ak.Array([isElement_below_threshold(el, threshold) for el in muon])
+
+def isEvent_below_threshold(event, threshold):
+    """
+    For an event (list of muons), return a list of booleans:
+    True where any element in a muon is below threshold.
+    """
+
+    #Check if it's None or empty
+    if event is None or len(event) == 0:
+        return ak.Array([False])
+    
+    #For all muons in an event, execute the isMuon function
+    return ak.Array([isMuon_below_threshold(muon, threshold) for muon in event])
+
+def isAll_below_threshold(data, threshold):
+    """
+    This function takes a dataset (awkward array, potentially nested) and a threshold (scalar)
+    and returns an array with the same shape containing True or False depending on if the 
+    elements of the data set are below the threshold or not.
+
+    This has been designed to check which elements of the delta r array are below a desired distance
+    """
+
+    #If the data is None or empty
+    if data is None or len(data) == 0:
+        return ak.Array([False])
+    
+    #For all events in the data, execute the isEvent function
+    return ak.Array([isEvent_below_threshold(event, threshold) for event in data])
+
+    
 # %%
