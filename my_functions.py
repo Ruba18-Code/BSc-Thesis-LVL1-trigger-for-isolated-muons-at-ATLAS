@@ -454,10 +454,18 @@ def jTower_selector(tree, name, n):
 # %%
 def jTower_muon_pair_maker(tree, name, n , val):
 
-    #This function creates pairs with some data (designed for an eta or phi value) and a jTower array
+    """
+    This function takes the jTower values of a certain tree (MuonTree_ZeroBias or MuonTree_Zmumu)
+    and a certain variable 'name' ("jTower_eta","jTower_phi","jTower_et_MeV"... IT HAS TO BE A STRING " ") for a specific event denoted with the index 'n' (n-th event).
+    And a scalar 'val' that should correspond to the value of eta,phi,et... of a muon in the n-th event.
 
-    #Get the jTower array
-    jTower_array=jTower_selector(tree,name,n)
+    Then it creates an array containing pairs, where the left column is always 'val' and the right column contains all
+    the elements inside our jTower event.
+
+    This is useful to then insert the output inside the delta_eta and delta_phi functions, and conveniently compute all
+    delta_r between the muon and the jTower.
+
+    The 'return' line is written in that way instead of what I though initially:
 
     res=[]
     #Create pairs
@@ -467,6 +475,18 @@ def jTower_muon_pair_maker(tree, name, n , val):
 
     return(res)
 
+    because it's faster (we avoid .append)
+
+    """
+
+    #Get the jTower array
+    jTower_array=jTower_selector(tree,name,n)
+
+    #This is needed because awkward arrays is naaaasty. 
+    val = np.float32(val[0][0])
+
+    # Use list comprehension to create pairs (val, jTower_element) for each jTower_element.
+    return [(val, stuff) for stuff in jTower_array]
 # %%
 def one_element_jTower_eta(element,tree, name, n):
 
