@@ -339,68 +339,46 @@ def quality_selector(data1, data2 ,value):
     return(ak.Array(selected_data))
 
 #-----------------------------------------------------------------------------------------------
+def delta_phi(phipairs):
 
-def delta_phi(pair):
+    """
+    This funtion takes an array containing pais of phi: phipairs=([phi1,phi2],[phi3,phi4],...)
+    and computes the delta phi for each pair in a vectorized way. 
 
-    #This function aims to compute the value delta phi between two particles
-    #delta_phi=min(abs(phi1-phi2), abs(phi2-phi1))  
-    #phi comes by default in the range [-pi,+pi]
-    #I prefer [0,2pi] so I'll convert the variables first by adding 2pi
+    It also works for just one pair.
 
-    phi1, phi2 = pair
+    The calculation on the 'return' line ensures that the output is between -Pi and +Pi
+    """
+    #Take first column - second column
+    phipairs= np.atleast_2d(phipairs)
+    dphi = phipairs[:, 0] - phipairs[:, 1]
 
-    phi1=np.mod(phi1+2*np.pi, 2*np.pi) #adding 2pi and dividing by modulo 2pi ensures that phi is in range [0,2pi)
-    phi2=np.mod(phi2+2*np.pi, 2*np.pi) #I'm using np.mod instead of % because it performs better with large datasets
+    #Return value between -Pi and +Pi
+    return (dphi + np.pi) % (2 * np.pi) - np.pi
 
-    #adding pi and dividing by modulo 2pi ensures that if phi1-phi2 is greater than pi (example: 1.5pi) it will become greater
-    #than 2pi (1.5pi+pi=2.5pi) and therefore the modulo will "remove" 2pi (2.5pi%2pi=0.5pi) giving the smallest difference
+def delta_eta(etapairs):
 
-    #delta_phi=np.abs((phi1-phi2+np.pi)%(2*np.pi)-np.pi) #This gives a result between 0 and pi always
+    """
+    This funtion takes an array containing pais of eta: etapairs=([eta1,eta2],[eta3,eta4],...)
+    and computes the delta eta for each pair in a vectorized way. 
 
-    return(np.abs((phi1-phi2+np.pi)%(2*np.pi)-np.pi))
+    It also works for just one pair.
+    """
 
-def delta_eta(pair):
+    #This line ensures that it'll work for 1D arrays [eta1,eta2] adding an extra dimension -> [[eta1,eta2]]
+    etapairs = np.atleast_2d(etapairs)
+    return(np.abs(etapairs[:,0] - etapairs[:,1]))
 
-    eta1, eta2 = pair
-    #This function aims to compute the value delta eta between two particles
-    #to do so, we simply substract abs(eta1-eta2)
+def delta_r(etapairs, phipairs):
 
-    return(np.abs(eta1-eta2))
+    """
+    Computes delta r (Δr) between eta and phi pairs in a vectorized way.
+    This funtion takes an array containing pais of eta: etapairs=([eta1,eta2],[eta3,eta4],...)
+    and also an array containing pais of phi: phipairs=([phi1,phi2],[phi3,phi4],...)
 
-def delta_r(etapair,phipair):
-
-    #This function aims to compute delta r ("distance") between two detected particles
-    #it makes use of the other functions, delta eta and delta phi, and simply computes the modulus
-
-    dphi=delta_phi(phipair)
-    deta=delta_eta(etapair)
-    
-    return(np.sqrt(dphi**2+deta**2))
-
-def get_all_delta_r(etapairs,phipairs):    
-    dr=[]
-
-    #Compute an array containing the delta r corresponding to each pair
-    for (eta1, eta2), (phi1,phi2) in zip(etapairs,phipairs):
-        dr.append(delta_r([eta1,eta2],[phi1,phi2]))
-    return(np.array(dr))
-
-def get_all_delta_phi(pairs):    
-    dphi=[]
-
-    for stuff in pairs:
-        phi1, phi2= stuff
-        dphi.append(delta_phi([phi1,phi2]))
-    return(np.array(dphi))
-
-def get_all_delta_eta(pairs):    
-    deta=[]
-
-    for stuff in pairs:
-        eta1, eta2= stuff
-        deta.append(delta_eta([eta1,eta2]))
-    return(np.array(deta))
-
+    It also works for just one pair.
+    """
+    return np.hypot(delta_eta(etapairs),delta_phi(phipairs))
 #---------------------------------------------------------------------------
 
 def rate_calculator(data,cut,scaling_factor):
