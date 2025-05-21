@@ -687,12 +687,15 @@ def muon_isolation_all_events(MuonTree_ZeroBias,threshold,TEST):
     for n in tqdm(range(min(TEST),max(TEST))):
         muon_eta_event=muon_eta_all_events[n]
         muon_phi_event=muon_phi_all_events[n]
-    
-        jTower_eta_event, jTower_phi_event, jTower_et_event = jTower_selector(
-        MuonTree_ZeroBias, ["jTower_eta", "jTower_phi", "jTower_et_MeV"], n)
 
-        isol_event=muon_isolation_one_event(muon_eta_event,muon_phi_event,jTower_eta_event,jTower_phi_event,jTower_et_event,threshold)
-        res.append(isol_event)
+        if len(muon_eta_event) == 0:
+            res.append([])
+        else:
+            jTower_eta_event, jTower_phi_event, jTower_et_event = jTower_selector(
+            MuonTree_ZeroBias, ["jTower_eta", "jTower_phi", "jTower_et_MeV"], n)
+
+            isol_event=muon_isolation_one_event(muon_eta_event,muon_phi_event,jTower_eta_event,jTower_phi_event,jTower_et_event,threshold)
+            res.append(isol_event)
 
     return(res)
 # %%
