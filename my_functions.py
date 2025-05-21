@@ -684,7 +684,7 @@ def muon_isolation_all_events(MuonTree_ZeroBias,threshold,TEST):
     muon_phi_all_events=MuonTree_ZeroBias["LVL1Muon_phi"].array()
 
     res=[]
-    for n in tqdm(range(TEST)):
+    for n in tqdm(range(min(TEST),max(TEST))):
         muon_eta_event=muon_eta_all_events[n]
         muon_phi_event=muon_phi_all_events[n]
     
