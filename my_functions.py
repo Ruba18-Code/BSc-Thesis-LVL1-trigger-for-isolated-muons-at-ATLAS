@@ -5,6 +5,7 @@ import scipy as sp #math and science package
 import awkward as ak #root files are usually awkward arrays 
 import matplotlib.pyplot as plt #plot stuff
 import itertools
+from tqdm import tqdm
 
 def histogram(data, nbins, x_range,  x_label, y_label, title_label):
     plt.hist(data, bins=nbins, range=x_range, color=plt.cm.viridis(0.9), edgecolor= 'black', density=True, alpha=0.7)   #plot the histogram of the data, for example 100 bins between -3 and 3
@@ -442,14 +443,26 @@ def jTower_handler(tree,name,xmin,xmax,binsize,chunk_size,xlabel,ylabel,title,sh
       
  return(combined_histogram, steps)
 
-def jTower_selector(tree, name, n):
+def jTower_selector(tree, names, n):
 
-    #Since jTower is heavy, this function allows to select only one element to not overload our RAM memory
-    #tree is the name of the tree: Muon_ZeroBias or Muon_Zmumu
-    #name is the name of the data: "jTower_eta", "jTower_et_MeV"...
-    #n is the position of the element we want to obtain
+    """
+    Selects specific branches for a given event index.
 
-   return tree.arrays([name], entry_start=n, entry_stop=n + 1)[name][0]
+    Inputs:
+    - tree: awkward array tree (e.g. Muon_ZeroBias or Muon_Zmumu)
+    - names: A string or list of strings representing the branch names (e.g. ["jTower_eta", "jTower_et_MeV"])
+    - n: index of the event
+
+    Returns:
+    - A single value if 'names' is a string (just 1 name), or a list of values if 'names' is a list of strings (more than 1 name)
+    """
+
+    if isinstance(names, str): #if the input is a string (just 1 branch name has been introduced)
+        return tree.arrays([names], entry_start=n, entry_stop=n + 1)[names][0]
+    else: #If the input is a list of strings (more than 1 branch name introduced)
+        result = tree.arrays(names, entry_start=n, entry_stop=n + 1)
+        return [result[name][0] for name in names]
+
 
 # %%
 def jTower_muon_pair_maker(tree, name, n , val):
@@ -481,9 +494,6 @@ def jTower_muon_pair_maker(tree, name, n , val):
 
     #Get the jTower array
     jTower_array=jTower_selector(tree,name,n)
-
-    #This is needed because awkward arrays is naaaasty. 
-    val = np.float32(val[0][0])
 
     # Use list comprehension to create pairs (val, jTower_element) for each jTower_element.
     return [(val, stuff) for stuff in jTower_array]
@@ -607,6 +617,82 @@ def isAll_below_threshold(data, threshold):
     
     #For all events in the data, execute the isEvent function
     return ak.Array([isEvent_below_threshold(event, threshold) for event in data])
+#-----------------------------------------------------------------------------------------------
+def dr_threshold_boolean_mask_event(event_dr,threshold):
 
+    """"
+    Takes an array containing the delta r values for an event and its respective jTower,
+    then it starts to iterate over al muons in the event and generates a boolean mask containing 'True'
+    for all delta_r values that are below a certain threshold.
+
+    By using NumPy we're able to do this in a vectorized way (meaning: operating over all the array at once, instead of looping), which is
+    shorter and apparently more resource efficient
+
+    The idea is to apply this boolean mask to the energy vector, that will select the energy elements that are associated with the muon
+    """
+    event_dr = np.array(event_dr)  # ensures it's a NumPy array
+    return event_dr < threshold
+
+def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, jTower_phi_event, jTower_et_event,threshold):
+
+    """
+    Inputs:
+        -Array containing the values of LVL1 muon pseudorapidity for an event (muon_eta_event)
+        -Array containing the values of LVL1 muon phi for an event (muon_phi_event)
+        -Array containing the values of LVL1 muon transverse energy in MeV for an event (muon_et_event)
+
+        -Array containing the values of jTower pseudorapidity for an event (jTower_eta_event)
+        -Array containing the values of jTower phi for an event (jTower_phi_event)
+        -Array containing the values of jTower transverse energy in MeV for an event (jTower_et_event)
+
+        -A scalar that indicates the threshold for delta r (threshold)
+
+    It will return an array containing the isolated muon energy of each muon inside the event.
+
+    To do so, it created pairs of (muon_eta,jTower_eta), (muon_phi,jTower_phi) for each muon and each jTower element, used to
+    compute the delta r values, and finally it creates a boolean mask that depends on the threshold and selects the valid calorimeter energies.
+    """
+
+    isolated_energy_event=[]
+
+    for (eta, phi) in zip(muon_eta_event, muon_phi_event):
+        #Generate pairs of [muon,jTower1],[muon,jTower2]...
+        #That's an array where the left column is the value of a muon (always the same) and the right column contains all the jTower values
+        #associated with such muon
+        jTower_muon_eta_pairs=[(eta, stuff) for stuff in jTower_eta_event]
+        jTower_muon_phi_pairs=[(phi, stuff) for stuff in jTower_phi_event]
+
+        #Compute delta r with the (eta,phi) pairs
+        dr_jTower_muon=delta_r( jTower_muon_eta_pairs,jTower_muon_phi_pairs)
+
+        #Create a boolean mask that will be 'True' only if the computed dr is smaller or equal than the threshold
+        mask=dr_threshold_boolean_mask_event(dr_jTower_muon,threshold)
+
+        #Apply the mask to the energy vector. This will select only the energies corresponding to the jTower pixels marked as TRUE
+        result=jTower_et_event[mask]
+
+        #Take the negative values out (they appear due to technical features of the detector)
+        #Sum up the results to get an estimate of the isolated muon energy in MeV
+        T=sum(result[result >= 0])
+        isolated_energy_event.append(T)
+
+    return(isolated_energy_event)
+
+def muon_isolation_all_events(MuonTree_ZeroBias,threshold,TEST):
+
+    muon_eta_all_events=MuonTree_ZeroBias["LVL1Muon_eta"].array()
+    muon_phi_all_events=MuonTree_ZeroBias["LVL1Muon_phi"].array()
+
+    res=[]
+    for n in tqdm(range(TEST)):
+        muon_eta_event=muon_eta_all_events[n]
+        muon_phi_event=muon_phi_all_events[n]
     
+        jTower_eta_event, jTower_phi_event, jTower_et_event = jTower_selector(
+        MuonTree_ZeroBias, ["jTower_eta", "jTower_phi", "jTower_et_MeV"], n)
+
+        isol_event=muon_isolation_one_event(muon_eta_event,muon_phi_event,jTower_eta_event,jTower_phi_event,jTower_et_event,threshold)
+        res.append(isol_event)
+
+    return(res)
 # %%
