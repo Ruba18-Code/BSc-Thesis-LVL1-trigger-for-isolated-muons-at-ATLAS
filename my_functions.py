@@ -5,7 +5,8 @@ import scipy as sp #math and science package
 import awkward as ak #root files are usually awkward arrays 
 import matplotlib.pyplot as plt #plot stuff
 import itertools
-from tqdm import tqdm
+from tqdm import tqdm #generated progress bars and estimates the computation time
+from numba import njit #numba helps to speed up calculations if the code is written in a certain way
 
 def histogram(data, nbins, x_range,  x_label, y_label, title_label):
     plt.hist(data, bins=nbins, range=x_range, color=plt.cm.viridis(0.9), edgecolor= 'black', density=True, alpha=0.7)   #plot the histogram of the data, for example 100 bins between -3 and 3
@@ -497,67 +498,8 @@ def jTower_muon_pair_maker(tree, name, n , val):
 
     # Use list comprehension to create pairs (val, jTower_element) for each jTower_element.
     return [(val, stuff) for stuff in jTower_array]
-# %%
-def one_element_jTower_eta(element,tree, name, n):
 
-    #Computes delta eta for one muon with respect to an entire jTower array with index n 
-    
-    return(get_all_delta_eta(jTower_muon_pair_maker(tree,name,n,element)))
-
-# %%
-def one_element_jTower_phi(element,tree, name, n):
-
-    #Computes delta phi for one muon with respect to an entire jTower array with index n 
-
-    return(get_all_delta_phi(jTower_muon_pair_maker(tree,name,n,element)))
-
-# %%
-def one_element_jTower_dr(element_eta,element_phi,tree_eta,tree_phi, name_eta,name_phi, n):
-
-    #Computes delta r for one muon with respect to an entire jTower array with index n 
-    #Warning: [element_eta.fields[0]] is necessary to turn ak.Record into scalars
-    
-    return(get_all_delta_r(jTower_muon_pair_maker(tree_eta,name_eta,n,element_eta),
-                           jTower_muon_pair_maker(tree_phi,name_phi,n,element_phi)))
-
-# %%
-def one_event_jTower_dr(event_eta,event_phi,tree_eta,tree_phi, name_eta,name_phi, n):
-
-    #Loop over an event to compute the dr between each of the muons of the event and an entire jTower array with index n
-    
-    res=[]
-
-    for i in range(len(event_eta)):
-        res.append(one_element_jTower_dr(event_eta[i],event_phi[i],tree_eta,tree_phi, name_eta,name_phi, n))
-    return(res)
-
-# %%
-def all_events_jTower_dr(eta_array,phi_array,tree_eta,tree_phi, name_eta,name_phi):
-
-    #Warning: this function may take VERY long to run depending on the amount of data
-
-    #Loop over all events and compute the dr between all muons in the events and their respective jTower array
-
-    #Ensure that all elements are ak.Array and not ak.Record (removes the 'labels' from the data and leaves just the numbers)
-    #This is very important
-    
-    eta_array=eta_array[eta_array.fields[0]]
-    phi_array=phi_array[phi_array.fields[0]]
-
-    #It's important that the result is returned as an ak.Array (otherwise it would be a list which is not what we want)
-
-    #The following syntax is a bit strange here but it's the most efficient. If the loop was outside, we'd need an extra vector,
-    #like in the example below (commented):
-
-        #res=[] <-----UNNECESSARY ASSIGNMENT
-        # for i in range(len(eta_array)):
-        #     res.append(one_event_jTower_dr(eta_array[i],phi_array[i],tree_eta,tree_phi, name_eta,name_phi, i))
-        # return(ak.Array(res))
-
-    #Here everything is done at once
-    return ak.Array(
-        [one_event_jTower_dr(eta_array[i], phi_array[i], tree_eta, tree_phi, name_eta, name_phi, i)
-        for i in range(len(eta_array))])
+############################################################3
 
 def isElement_below_threshold(element, threshold):
     """
@@ -632,7 +574,7 @@ def dr_threshold_boolean_mask_event(event_dr,threshold):
     """
     event_dr = np.array(event_dr)  # ensures it's a NumPy array
     return event_dr < threshold
-
+    
 def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, jTower_phi_event, jTower_et_event,threshold):
 
     """
@@ -673,29 +615,74 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
 
         #Take the negative values out (they appear due to technical features of the detector)
         #Sum up the results to get an estimate of the isolated muon energy in MeV
-        T=sum(result[result >= 0])
+        T=np.sum(result[result >= 0])
         isolated_energy_event.append(T)
 
     return(isolated_energy_event)
 
-def muon_isolation_all_events(MuonTree_ZeroBias,threshold,TEST):
+def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, threshold, event_range, batch_size):
+    """
+    This function computes muon isolation for all events in batches of a certain size to avoid crashing the computer.
+    
+    Inputs:
+        tree: select a tree (MuonTree_ZeroBias or MuonTree_Zmumu)
+        muon_eta/phi_all: awkward array containing the data of a Muon Tree (example: muon_eta_all=MuonTree_ZeroBias["LVLMuon_eta"].array())
+        threshold: float that sets the maximum acceptable value for delta R (typically 0.4)
+        event_range: tuple of [start_event, end_event]. To use the full dataset write [0,len(muon_eta_all)]
+        batch_size: int that sets the number of events to process at once (shouldn't be larger than 5.000-10.000 for a PC with 8gb of RAM)
+    Returns:
+        List of isolated muon energies per event
+    """
 
-    muon_eta_all_events=MuonTree_ZeroBias["LVL1Muon_eta"].array()
-    muon_phi_all_events=MuonTree_ZeroBias["LVL1Muon_phi"].array()
+    start_event, end_event = event_range
+    res = []
 
-    res=[]
-    for n in tqdm(range(min(TEST),max(TEST))):
-        muon_eta_event=muon_eta_all_events[n]
-        muon_phi_event=muon_phi_all_events[n]
+    # Process in batches to avoid memory overload (crash due to lack of RAM)
 
-        if len(muon_eta_event) == 0:
-            res.append([])
-        else:
-            jTower_eta_event, jTower_phi_event, jTower_et_event = jTower_selector(
-            MuonTree_ZeroBias, ["jTower_eta", "jTower_phi", "jTower_et_MeV"], n)
+    total_events = end_event - start_event
 
-            isol_event=muon_isolation_one_event(muon_eta_event,muon_phi_event,jTower_eta_event,jTower_phi_event,jTower_et_event,threshold)
-            res.append(isol_event)
+    #tqdm is used to get a progress bar that estimates the remaining time 
+    #batch_stop is written like that to prevent going out of range
+    for batch_start in tqdm(range(0, total_events, batch_size)):
+        batch_stop = min(batch_start + batch_size, total_events)
 
-    return(res)
+        # Load jTower data only for the current batch
+        jTower = tree.arrays(
+            ["jTower_eta", "jTower_phi", "jTower_et_MeV"],
+            entry_start=start_event + batch_start,
+            entry_stop=start_event + batch_stop
+        )
+        #assign eta, phi and et
+        jTower_eta_batch = jTower["jTower_eta"]
+        jTower_phi_batch = jTower["jTower_phi"]
+        jTower_et_batch  = jTower["jTower_et_MeV"]
+
+        #get the muon data for the current batch
+        muon_eta_batch = muon_eta_all[batch_start:batch_stop]
+        muon_phi_batch = muon_phi_all[batch_start:batch_stop]
+
+        # Loop over events in a batch
+        for i in range(len(muon_eta_batch)):
+            muon_eta_event = muon_eta_batch[i]
+            muon_phi_event = muon_phi_batch[i]
+
+            #Check if the event is empty before starting the calculations. This can reduce the computing time a lot if
+            #our data includes many empty events 
+            if len(muon_eta_event) == 0:
+                res.append([])
+            else:
+                #If the event is not empty compute the isolation
+                jTower_eta_event = jTower_eta_batch[i]
+                jTower_phi_event = jTower_phi_batch[i]
+                jTower_et_event  = jTower_et_batch[i]
+
+                isol_event = muon_isolation_one_event(
+                    muon_eta_event, muon_phi_event,
+                    jTower_eta_event, jTower_phi_event, jTower_et_event,
+                    threshold
+                )
+                #and append it to the result
+                res.append(isol_event)
+
+    return res
 # %%
