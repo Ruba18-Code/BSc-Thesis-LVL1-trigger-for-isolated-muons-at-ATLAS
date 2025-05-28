@@ -65,8 +65,14 @@ print(r"Some of the isolated energies for Z to mumu offline muons are:", res2[0]
 "value is", ak.mean(res2), "MeV")
 
 ############################################################
-data1=ak.flatten((MuonTree_Zmumu["muon_pt"].array())/(res1))
-data2=ak.flatten((MuonTree_ZeroBias["muon_pt"].array())/(res2))
+"""
+In this part I'm going to plot the ratio of isolated energy / transverse energy (or approximately, pt)
+"""
+pt1=MuonTree_Zmumu["muon_pt"].array()
+pt2=MuonTree_ZeroBias["muon_pt"].array()
+
+data1=ak.flatten(res1/pt1)
+data2=ak.flatten(res2/pt2)
 
 colors=['b','r']
 labels=[r"Z $\longrightarrow \mu \mu$ offline muons",r"Zero Bias offline muons"]

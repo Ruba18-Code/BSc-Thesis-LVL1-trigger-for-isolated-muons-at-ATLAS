@@ -312,33 +312,33 @@ def invariant_mass_all_muons2(pt,eta,phi):
 
 #-----------------------------------------------------------------------------------------------
 
-def quality_locator(data, value):
+def quality_selector(quality_data, muon_data, value):
 
-    #This function gets the dataset that states the quality of the muons (muon_quality) and lets us 
-    #select the quality using the input "value". Then it will create an array that contains a list
-    #of the positions (indices) of the elements that have the desired quality
+    """
+    This function is designed to select only the events that match a certain quality.
 
-    j=0
-    desired_quality_position=[]
-    for index, array in enumerate(data):
-        if all(x==value for x in array):
-            desired_quality_position.append(index)
-    return(desired_quality_position)
+    Inputs:
+        -quality_data: awkward array, contains the quality data (in my case: MuonTrees_Zmumu["muon_quality"])
+        -muon_data: awkward array, contains the data that we want to filter if it matches the specified quality 
+        (example: MuonTrees_Zmumu["muon_eta"])
+        -value: int, desired quality (0 represents the highest quality)
 
-def quality_selector(data1, data2 ,value):
+    Returns:
+        -A filtered version of muon_data containing only events where all muons have quality==value
+        -Prints a message that informs about how much data has been selected.
 
-    #data1 is "muon_quality", data2 should be things like "muon_eta" or "muon_e"...
-    #Using the "quality_locator" function, this function returns a list of data that involve only the 
-    #muons of selected quality. For example:
-    #say data2="muon_phi" and value=0, it will return a list with the values of muon_phi only for quality 0 muons
-     
-    selected_data=[]
-    desired_quality_position=quality_locator(data1,value)
-    for i in range(len(desired_quality_position)):
-        pos=desired_quality_position[i]
-        selected_data.append(data2[pos])
-    print("Only", (len(selected_data)/len(data2))*100, r"% of the data has been selected")
-    return(ak.Array(selected_data))
+    """ 
+    # Create a mask that is True if ALL elements in the event match the value
+    event_mask = ak.all(quality_data == value, axis=1)
+
+    # Apply the mask to select only the events where all muons have the desired quality
+    selected_data = muon_data[event_mask]
+
+    # Compute the selection percentage
+    print("Only", (len(selected_data) / len(muon_data)) * 100, r"% of the data has been selected")
+
+    return selected_data
+
 
 #-----------------------------------------------------------------------------------------------
 def delta_phi(phipairs):
