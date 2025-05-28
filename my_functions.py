@@ -182,31 +182,23 @@ def invariant_mass(pt1, eta1, phi1, pt2, eta2, phi2):
     mass_squared = E**2 - (px**2 + py**2 + pz**2)
     return np.sqrt(mass_squared) if mass_squared > 0 else 0.0
 
+def invariant_mass_pair_selector(pt,eta,phi,i):
 
-def invariant_mass_all_muons(pt, eta,phi):
-    #This function takes the entire set of data that contains information about the eta, phi and pt of the muons
-    #and computes a list that contains the invariant mass associated to every event
+    """
+    This function is designed to take pt (in MeV!), eta and phi from a Z-> mu mu event. If the event involves more than 2 muons, that means
+    that there are 'fake' muons included in our event. The idea is to compute the invariant mass for all possible pairs
+    and select which is the 'True' pair by comparint the computed invariant mass with the Z boson invariant mass. The pair
+    that gets closer will be considered the best candidate
 
-    j=0
+    Inputs:
+        -pt, eta and phi of the event
+    
+    Returns:
+        -pt, eta and phi of the chosen pair
+        -the invariant mass of the best pair
+    """
 
-    invariant_masses=[]
-    for i in range(len(eta)):
-        if len(eta[i]) & len(phi[i]) & len(pt[i]) == 2:
-            eta1=(eta[i])[0]
-            eta2=(eta[i])[1]
-            phi1=(phi[i])[0]
-            phi2=(phi[i])[1]
-            pt1=(pt[i])[0]
-            pt2=(pt[i])[1]
-            invariant_masses.append(invariant_mass(pt1, eta1, phi1, pt2, eta2, phi2))
-            j=j+1
-    return ak.Array(invariant_masses)
-
-def pair_selector(pt,eta,phi,i):
-
- #This function aims to select the "real" pair of muons when an event has more than two muons involved
-
- #Let's hardcode the theoretical value of a Z mass
+ #Let's hardcode the theoretical value of the Z boson invariant mass
  ztheo=91188 #MeV
 
  mu=[]
@@ -253,13 +245,57 @@ def pair_selector(pt,eta,phi,i):
  #It returns the value of the invariant mass for the best pair and the values of (mu1,mu2) for the best pair
  return(invariant_mass_best_pair,best_pair)
 
+
+def invariant_mass_all_muons(pt,eta,phi):
+
+    """
+    Introduce the arrays containing pt,eta and phi data for an event of arrays of events. The function will compute the 
+    invariant mass for each event. If the event involves more than two muons, it will select the muon pair that gets
+    closer to the Z boson invariant mass, assuming that this is the 'True' pair of muons between all the other candidates.
+
+    Inputs:
+        -pt, eta, phi: awkward arrays, data containing pt, eta and phi for one or multiple events involving any number of muons
+    
+    Returns:
+        -awkward array containing the invariant mass for each event. If there's more than 2 muons, it selects the one that's closer
+        to the Z boson invariant mass.
+
+        -tqdm generates a progress bar to help preserve the user's mental health
+    """
+
+    invariant_masses=[]
+    
+    #Scan all events
+    for i in tqdm(range(len(eta))):
+
+        #If the event involves two muons
+        if len(eta[i])==2 and len(phi[i])==2 and len(pt[i]) == 2:
+
+            #Unpack
+            eta1, eta2= eta[i]
+            phi1, phi2 = phi[i]
+            pt1, pt2= pt[i]
+
+            #Compute invariant mass
+            invariant_masses.append(invariant_mass(pt1, eta1, phi1, pt2, eta2, phi2))
+
+        #If it involves more than 2 muons (also check if they're the same length for safety)
+        elif len(pt[i]) > 2 and len(pt[i]) == len(eta[i]) == len(phi[i]):
+            m = invariant_mass_pair_selector(pt, eta, phi, i)
+            if m is not None:  # Ensure that m is not None
+                invariant_masses.append(m[0])
+        else:
+            invariant_masses.append([])
+
+    return ak.Array(invariant_masses)
+
 def get_all_pairs(pt,eta,phi):
 
     #This function executes pair_selector and returns an array like ([mu1.1,mu1.2],[mu2.1,mu2.2],...)
     #that contains the selected pairs 
     pairs=[]
     for i in range(len(eta)):
-        m=pair_selector(pt, eta, phi, i)
+        m=invariant_mass_pair_selector(pt, eta, phi, i)
         pairs.append(m[1])
     
     return(pairs)
@@ -282,33 +318,6 @@ def get_pair_variables(pt,eta,phi):
 
     return(pt,eta,phi)
 
-def invariant_mass_all_muons2(pt,eta,phi):
-
-    #Improvement of invariant_mass_all_muons. This function also takes into account events with more than 2 muons. It may take much 
-    #longer to run though
-    #This function takes the entire set of data that contains information about the eta, phi and pt of the muons
-    #and computes a list that contains the invariant mass associated to every event
-
-    invariant_masses=[]
-    
-    #Scan all events
-    for i in range(len(eta)):
-        #If the event involves two muons
-        if len(eta[i]) and len(phi[i]) and len(pt[i]) == 2:
-            eta1=(eta[i])[0]
-            eta2=(eta[i])[1]
-            phi1=(phi[i])[0]
-            phi2=(phi[i])[1]
-            pt1=(pt[i])[0]
-            pt2=(pt[i])[1]
-            invariant_masses.append(invariant_mass(pt1, eta1, phi1, pt2, eta2, phi2))
-        #If it involves more than 2 muons
-        else:
-            m = pair_selector(pt, eta, phi, i)
-            if m is not None:  # Ensure that m is not None
-                invariant_masses.append(m[0])
-
-    return ak.Array(invariant_masses)
 
 #-----------------------------------------------------------------------------------------------
 
