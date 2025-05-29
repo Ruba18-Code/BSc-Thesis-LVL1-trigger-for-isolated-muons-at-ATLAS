@@ -5,12 +5,7 @@ import numpy as np #math and science package
 import scipy as sp #math and science package
 import awkward as ak #root files are usuallt awkward arrays 
 import matplotlib.pyplot as plt #plot stuff
-from my_functions import coolplot
-from my_functions import ak_element_lenght_counter
-from my_functions import plot_number_elements_per_event
-from my_functions import quality_locator
-from my_functions import quality_selector
-from my_functions import ak_element_lenght_counter
+from my_functions import*
 
 # %%
 file= uproot.open("/home/ruben/Escritorio/BachelorThesisRuben/Data/Muon_trees.root") #opening the Root file with Uproot 

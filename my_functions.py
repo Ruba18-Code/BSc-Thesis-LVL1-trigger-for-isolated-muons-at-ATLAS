@@ -352,7 +352,7 @@ def get_all_Z_peak_pairs(pt, eta, phi):
                 # Make sure none of these are None or empty
                 if (pt_pair is not None and eta_pair is not None and phi_pair is not None):
 
-                    #Re-structure the data in a more useful way
+                    #Re-structure the data in the desired way
                     combined_pair = [list(x) for x in zip(pt_pair, eta_pair, phi_pair)]
                     pairs.append(combined_pair)
                     continue  # continue to next event
