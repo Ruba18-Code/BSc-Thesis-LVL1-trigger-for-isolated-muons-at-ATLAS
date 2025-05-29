@@ -212,7 +212,7 @@ def invariant_mass_pair_selector(pt,eta,phi):
 
     #If the length of the data is not consistent return empty and None
     if not (len(pt) == len(eta) == len(phi)):
-        pair=ak.Array([],[],[])
+        pair=ak.Array([None,None,None])
         inv_mass=None
 
         return(inv_mass, pair)
@@ -221,7 +221,7 @@ def invariant_mass_pair_selector(pt,eta,phi):
     else:
         #If the event has 1 or 0 muons there's no possible pair to be formed: return empty and None
         if len(pt)<2:
-            pair=ak.Array([],[],[])
+            pair=ak.Array([None,None,None])
             inv_mass=None
 
             return(inv_mass, pair)
@@ -231,7 +231,7 @@ def invariant_mass_pair_selector(pt,eta,phi):
             #The selected pair will be of course the only pair
             pair=([pt,eta,phi])
             #And compute the invariant mass of the pair
-            inv_mass=invariant_mass_pair(pt,eta,phi)
+            inv_mass=invariant_mass_pair(pt[0],eta[0],phi[0],pt[1],eta[1],phi[1])
 
             return(inv_mass,pair)
         #If the event contains more than 2 muons, take into account all the possible combinations
@@ -275,7 +275,7 @@ def invariant_mass_pair_selector(pt,eta,phi):
         
         #else for safety
         else:
-            pair=ak.Array([],[],[])
+            pair=ak.Array([None,None,None])
             inv_mass=None
 
             return(inv_mass, pair)
@@ -324,34 +324,43 @@ def invariant_mass_all_muons(pt,eta,phi):
 
     return ak.Array(invariant_masses)
 
-def get_all_pairs(pt,eta,phi):
+def get_all_Z_peak_pairs(pt, eta, phi):
 
-    #This function executes pair_selector and returns an array like ([mu1.1,mu1.2],[mu2.1,mu2.2],...)
-    #that contains the selected pairs 
-    pairs=[]
-    for i in range(len(eta)):
-        m=invariant_mass_pair_selector(pt, eta, phi, i)
-        pairs.append(m[1])
+    """This function returns the selected pairs during the Z-peak reconstruction. Meaning: if we introduce Z->mu mu events involving more
+    than two muons, it will return events involving only the 2 muons, because it filters out the 'Fake' muons by computing the invariant
+    mass of all possible muon pairs in an events and comparing it to the theoretical Z boson mass (all that is done using invariant_mass
+    _pair_selector). The role of this functions is structuring the output of invariant_mass_pair_selector in a useful way.
+
+    Inputs:
+        -pt, eta, phi: awkward arrays, transverse momentum, pseudorapidity and azimuthal angle of the events
+
+    Returns:
+        -pairs: nested awkward array with shape [event1,event2,...] where event1=[mu1,mu2] where mu1=[pt1,eta1,phi1].
     
-    return(pairs)
+    """
+    pairs = []
+    for i in tqdm(range(len(eta))):
+        #Execute invariant_mass_pair_selector for the i-th event and get the selected pair (adding [1] at the end)
+        selected_pair = (invariant_mass_pair_selector(pt[i], eta[i], phi[i]))[1]
 
-def get_pair_variables(pt,eta,phi):
+        #Check if it's None for safety
+        if selected_pair is not None:
+            # Check if selected_pair is structured as expected
+            if len(selected_pair) == 3:
+                pt_pair, eta_pair, phi_pair = selected_pair
+                
+                # Make sure none of these are None or empty
+                if (pt_pair is not None and eta_pair is not None and phi_pair is not None):
 
-    #This function returns three arrays, pt, eta and phi, that contains the values of these variables in pairs
-    pairs=get_all_pairs(pt,eta,phi)
+                    #Re-structure the data in a more useful way
+                    combined_pair = [list(x) for x in zip(pt_pair, eta_pair, phi_pair)]
+                    pairs.append(combined_pair)
+                    continue  # continue to next event
+        
+        # If we got here, something was missing or None - append empty list
+        pairs.append([[],[]])
     
-    pt=[]
-    eta=[]
-    phi=[]
-    for mu in pairs:
-        pt1, eta1, phi1 = mu[0]
-        pt2, eta2, phi2 = mu[1]
-
-        pt.append([pt1, pt2])
-        eta.append([eta1, eta2])
-        phi.append([phi1,phi2])
-
-    return(pt,eta,phi)
+    return ak.Array(pairs)
 
 
 #-----------------------------------------------------------------------------------------------
