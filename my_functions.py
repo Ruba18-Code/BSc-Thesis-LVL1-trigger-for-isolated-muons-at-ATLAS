@@ -159,30 +159,39 @@ def plot_number_elements_per_event(data,bins,colors,labels,x_label,y_label,title
 
 #-----------------------------------------------------------------------------------------------
 
-def invariant_mass(pt1, eta1, phi1, pt2, eta2, phi2):
-
-    #This function calculates the invariant mass of the system. The first block is for muon 1 and the second for muon 2.
-    #The third block adds up the contributions from muon 1 and 2. Finally, the invariant mass is computed.
+def invariant_mass_pair(pt1, eta1, phi1, pt2, eta2, phi2):
+    """
+    Compute the invariant mass of a particle pair system given their pt, eta, and phi.
     
-    px1 = pt1 * np.cos(phi1)
-    py1 = pt1 * np.sin(phi1)
+    Inputs:
+        -pt1, eta1, phi1: floats, transverse momentum, pseudorapidity, and azimuthal angle of particle 1
+        -pt2, eta2, phi2: floats, transverse momentum, pseudorapidity, and azimuthal angle of particle 2
+
+    Returns:
+        -float: Invariant mass of the system in MeV
+    """
+
+    # Compute cartesian momenta
+    px1, py1 = pt1 * np.cos(phi1), pt1 * np.sin(phi1)
     pz1 = pt1 * np.sinh(eta1)
     E1  = pt1 * np.cosh(eta1)
 
-    px2 = pt2 * np.cos(phi2)
-    py2 = pt2 * np.sin(phi2)
+    px2, py2 = pt2 * np.cos(phi2), pt2 * np.sin(phi2)
     pz2 = pt2 * np.sinh(eta2)
     E2  = pt2 * np.cosh(eta2)
 
-    px = px1 + px2
-    py = py1 + py2
-    pz = pz1 + pz2
-    E  = E1 + E2
+    # Total momentum and energy
+    px, py, pz = px1 + px2, py1 + py2, pz1 + pz2
+    E = E1 + E2
 
+    # Invariant mass squared
     mass_squared = E**2 - (px**2 + py**2 + pz**2)
+
+    #Check if it's positive for safety and return
     return np.sqrt(mass_squared) if mass_squared > 0 else 0.0
 
-def invariant_mass_pair_selector(pt,eta,phi,i):
+
+def invariant_mass_pair_selector(pt,eta,phi):
 
     """
     This function is designed to take pt (in MeV!), eta and phi from a Z-> mu mu event. If the event involves more than 2 muons, that means
@@ -198,52 +207,78 @@ def invariant_mass_pair_selector(pt,eta,phi,i):
         -the invariant mass of the best pair
     """
 
- #Let's hardcode the theoretical value of the Z boson invariant mass
- ztheo=91188 #MeV
+    #Let's hardcode the theoretical value of the Z boson invariant mass
+    ztheo=91188 #MeV
 
- mu=[]
- res=[]
- diff=[]
- #First, check if the lenght of the different variables is the same for some [i] event. Otherwise ignore the event, since the data
- #is not consistent 
- if (len(eta[i]) == len(phi[i]) == len(pt[i]) and len(eta[i])>2): 
-    for j in range(len(eta[i])):
-        aux=[(pt[i])[j],(eta[i])[j],(phi[i])[j]] #for each muon collect mu=(pt,eta,phi)
-        mu.append(aux)                           #and create a vector that contains the values (mu1,mu2,mu3,...,muN)
-    pairs=list(itertools.combinations(mu,2))     #create list of all possible pairs
-    for mu1, mu2 in pairs:
-        #for every pair take the first mu and assign pt1,eta1,phi1
-        pt1, eta1, phi1 = mu1
-        pt2, eta2, phi2 = mu2
-        #compute the invariant mass of the pair
-        a=invariant_mass(pt1, eta1, phi1, pt2, eta2, phi2)
-        res.append(a)
-        #and also the difference with respect to the theoretical Z mass
-        b=abs(ztheo-a)
-        diff.append(b)
-    #Now select the best pair (meaning: pair with the smallest differencie with respect to the theoretical value)
-    best_pair_position=diff.index(min(diff)) #This is the position of the best pair 
-    invariant_mass_best_pair=res[best_pair_position] #The invariant mass of the best pair
-    best_pair=pairs[best_pair_position] #The vector [mu1,mu2] that contains the values of pt, eta and phi of the best pair
+    #If the length of the data is not consistent return empty and None
+    if not (len(pt) == len(eta) == len(phi)):
+        pair=ak.Array([],[],[])
+        inv_mass=None
 
- #If there's only one pair
- if (len(eta[i]) == len(phi[i]) == len(pt[i]) and len(eta[i])==2):
-    for j in range(len(eta[i])):
+        return(inv_mass, pair)
+    
+    #If the length is consistent start selecting
+    else:
+        #If the event has 1 or 0 muons there's no possible pair to be formed: return empty and None
+        if len(pt)<2:
+            pair=ak.Array([],[],[])
+            inv_mass=None
+
+            return(inv_mass, pair)
         
-        pt1, pt2 = pt[i]
-        eta1, eta2 = eta[i]
-        phi1, phi2 = phi[i]
+        #If the event contains 2 muons (1 pair)
+        if len(pt)==2:
+            #The selected pair will be of course the only pair
+            pair=([pt,eta,phi])
+            #And compute the invariant mass of the pair
+            inv_mass=invariant_mass_pair(pt,eta,phi)
 
-        best_pair_position=0 
-        invariant_mass_best_pair=invariant_mass(pt1,eta1,phi1,pt2,eta2,phi2)
-        best_pair=([pt1,eta1,phi1],[pt2,eta2,phi2])
+            return(inv_mass,pair)
+        #If the event contains more than 2 muons, take into account all the possible combinations
+        if len(pt)>2:
+            mu=[]
+            #for each muon in the event, take its pt,eta,phi
+            for (muon_pt,muon_eta,muon_phi) in zip(pt,eta,phi):
+                #append it to a list containing pt,eta,phi for all muons in the event ([mu1],[mu2],[mu3])
+                mu.append([muon_pt,muon_eta,muon_phi])
+            #Using itertools create all possible pairs of muons
+            pairs=list(itertools.combinations(mu,2))
+
+            #for every muon pair
+            res=[]
+            diff=[]
+            for mu1, mu2 in pairs:
+                #unpack the variables
+                pt1, eta1, phi1 = mu1
+                pt2, eta2, phi2 = mu2
+
+                #Compute the invariant mass of the pair
+                inv_mass=invariant_mass_pair(pt1, eta1, phi1, pt2, eta2, phi2)
+                res.append(inv_mass)
+                #Compute the difference with respect to the theoretical Z mass
+                pair_diff=abs(ztheo-inv_mass)
+                diff.append(pair_diff)
+
+            #Now select the best pair (meaning: pair with the smallest differencie with respect to the theoretical value)
+            diff = np.array(diff)
+            res = np.array(res)
+            pairs = np.array(pairs)
+
+            # Boolean mask where the diff is equal to the minimum
+            mask = diff == np.min(diff)
+
+            # Apply mask to res and pairs ([0] selects the first in the unlikely case of having two muons with the same diff)
+            inv_mass= res[mask][0]
+            pair = pairs[mask][0]
+
+            return(inv_mass,pair)
         
- #If the length is smaller than 2, then there's no possible pair
- if (len(eta[i]) == len(phi[i]) == len(pt[i]) and len(eta[i])<2):
-        invariant_mass_best_pair=0.0
-        best_pair=([0.0,0.0,0.0],[0.0,0.0,0.0])
- #It returns the value of the invariant mass for the best pair and the values of (mu1,mu2) for the best pair
- return(invariant_mass_best_pair,best_pair)
+        #else for safety
+        else:
+            pair=ak.Array([],[],[])
+            inv_mass=None
+
+            return(inv_mass, pair)
 
 
 def invariant_mass_all_muons(pt,eta,phi):
@@ -277,11 +312,11 @@ def invariant_mass_all_muons(pt,eta,phi):
             pt1, pt2= pt[i]
 
             #Compute invariant mass
-            invariant_masses.append(invariant_mass(pt1, eta1, phi1, pt2, eta2, phi2))
+            invariant_masses.append(invariant_mass_pair(pt1, eta1, phi1, pt2, eta2, phi2))
 
         #If it involves more than 2 muons (also check if they're the same length for safety)
         elif len(pt[i]) > 2 and len(pt[i]) == len(eta[i]) == len(phi[i]):
-            m = invariant_mass_pair_selector(pt, eta, phi, i)
+            m = invariant_mass_pair_selector(pt[i], eta[i], phi[i])
             if m is not None:  # Ensure that m is not None
                 invariant_masses.append(m[0])
         else:
