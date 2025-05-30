@@ -229,11 +229,11 @@ def invariant_mass_pair_selector(pt,eta,phi):
         #If the event contains 2 muons (1 pair)
         if len(pt)==2:
             #The selected pair will be of course the only pair
-            pair=([pt,eta,phi])
+            pair=([pt[0],eta[0],phi[0]],[pt[1],eta[1],phi[1]])
             #And compute the invariant mass of the pair
             inv_mass=invariant_mass_pair(pt[0],eta[0],phi[0],pt[1],eta[1],phi[1])
 
-            return(inv_mass,pair)
+            return(inv_mass,np.array(pair))
         #If the event contains more than 2 muons, take into account all the possible combinations
         if len(pt)>2:
             mu=[]
@@ -324,7 +324,7 @@ def invariant_mass_all_muons(pt,eta,phi):
 
     return ak.Array(invariant_masses)
 
-def get_all_Z_peak_pairs(pt, eta, phi):
+def get_all_Z_peak_pairs(pt_events, eta_events, phi_events):
 
     """This function returns the selected pairs during the Z-peak reconstruction. Meaning: if we introduce Z->mu mu events involving more
     than two muons, it will return events involving only the 2 muons, because it filters out the 'Fake' muons by computing the invariant
@@ -332,36 +332,37 @@ def get_all_Z_peak_pairs(pt, eta, phi):
     _pair_selector). The role of this functions is structuring the output of invariant_mass_pair_selector in a useful way.
 
     Inputs:
-        -pt, eta, phi: awkward arrays, transverse momentum, pseudorapidity and azimuthal angle of the events
+        -pt_events, eta_events, phi_events: awkward arrays, transverse momentum, pseudorapidity and azimuthal angle of the events
 
     Returns:
-        -pairs: nested awkward array with shape [event1,event2,...] where event1=[mu1,mu2] where mu1=[pt1,eta1,phi1].
+        -pt, eta, phi: three awkward arrays like pt=[[pt1.1,pt1.2],[pt2.1,pt2.2],[pt3.1,pt3.2],...] = [pt_pair1,pt_pair2,pt_pair3...]
     
     """
-    pairs = []
-    for i in tqdm(range(len(eta))):
+    pt =[]
+    eta=[]
+    phi=[]
+    for i in tqdm(range(len(eta_events))):
         #Execute invariant_mass_pair_selector for the i-th event and get the selected pair (adding [1] at the end)
-        selected_pair = (invariant_mass_pair_selector(pt[i], eta[i], phi[i]))[1]
+        selected_pair = (invariant_mass_pair_selector(pt_events[i], eta_events[i], phi_events[i]))[1]
 
         #Check if it's None for safety
         if selected_pair is not None:
             # Check if selected_pair is structured as expected
-            if len(selected_pair) == 3:
-                pt_pair, eta_pair, phi_pair = selected_pair
+            if len(selected_pair) == 2:
+                pt_pair=[selected_pair[0][0], selected_pair[1][0]]
+                eta_pair=[selected_pair[0][1], selected_pair[1][1]]
+                phi_pair=[selected_pair[0][2],selected_pair[1][2]]
                 
                 # Make sure none of these are None or empty
                 if (pt_pair is not None and eta_pair is not None and phi_pair is not None):
 
-                    #Re-structure the data in the desired way
-                    combined_pair = [list(x) for x in zip(pt_pair, eta_pair, phi_pair)]
-                    pairs.append(combined_pair)
+                    pt.append(pt_pair), eta.append(eta_pair), phi.append(phi_pair)
+                    
                     continue  # continue to next event
-        
-        # If we got here, something was missing or None - append empty list
-        pairs.append([[],[]])
+        # If we got here, something was missing or None - append empty array
+        pt.append(np.empty((0,2))), eta.append(np.empty((0,2))), phi.append(np.empty((0,2)))
     
-    return ak.Array(pairs)
-
+    return ak.Array(pt),  ak.Array(eta),  ak.Array(phi)
 
 #-----------------------------------------------------------------------------------------------
 
