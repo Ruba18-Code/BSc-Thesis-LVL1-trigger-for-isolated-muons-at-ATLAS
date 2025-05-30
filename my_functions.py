@@ -477,7 +477,7 @@ def jTower_handler(tree,name,xmin,xmax,binsize,chunk_size,xlabel,ylabel,title,sh
  bins=np.arange(xmin,xmax,binsize)
 
  #Slice the dataset in chunks of size 'chunk_size' and count the amount of chunks 
- for data in tree.iterate([name], step_size=chunk_size):
+ for data in tqdm(tree.iterate([name], step_size=chunk_size)):
        data = data[name]
        steps=steps+1
         #Compute histogram for all chunks
