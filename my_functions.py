@@ -613,12 +613,12 @@ def isAll_below_threshold(data, threshold):
     #For all events in the data, execute the isEvent function
     return ak.Array([isEvent_below_threshold(event, threshold) for event in data])
 #-----------------------------------------------------------------------------------------------
-def dr_threshold_boolean_mask_event(event_dr,threshold):
+def dr_threshold_boolean_mask_event(event_dr,lower_threshold,upper_threshold):
 
     """"
     Takes an array containing the delta r values for an event and its respective jTower,
     then it starts to iterate over al muons in the event and generates a boolean mask containing 'True'
-    for all delta_r values that are below a certain threshold.
+    for all delta_r values that are contained in a certain interval (lower_threshold,upper_threshold)
 
     By using NumPy we're able to do this in a vectorized way (meaning: operating over all the array at once, instead of looping), which is
     shorter and apparently more resource efficient
@@ -626,9 +626,10 @@ def dr_threshold_boolean_mask_event(event_dr,threshold):
     The idea is to apply this boolean mask to the energy vector, that will select the energy elements that are associated with the muon
     """
     event_dr = np.array(event_dr)  # ensures it's a NumPy array
-    return event_dr < threshold
+    return (lower_threshold < event_dr) & (event_dr < upper_threshold)
     
-def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, jTower_phi_event, jTower_et_event,threshold):
+def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, jTower_phi_event, jTower_et_event,
+                             lower_threshold,upper_threshold):
 
     """
     Inputs:
@@ -640,12 +641,13 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
         -Array containing the values of jTower phi for an event (jTower_phi_event)
         -Array containing the values of jTower transverse energy in MeV for an event (jTower_et_event)
 
-        -A scalar that indicates the threshold for delta r (threshold)
+        -Two scalars that indicate the lower and upper threshold for delta r
 
     It will return an array containing the isolated muon energy of each muon inside the event.
 
     To do so, it created pairs of (muon_eta,jTower_eta), (muon_phi,jTower_phi) for each muon and each jTower element, used to
-    compute the delta r values, and finally it creates a boolean mask that depends on the threshold and selects the valid calorimeter energies.
+    compute the delta r values, and finally it creates a boolean mask that depends on the threshold and selects the valid 
+    calorimeter energies.
     """
 
     isolated_energy_event=[]
@@ -661,7 +663,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
         dr_jTower_muon=delta_r( jTower_muon_eta_pairs,jTower_muon_phi_pairs)
 
         #Create a boolean mask that will be 'True' only if the computed dr is smaller or equal than the threshold
-        mask=dr_threshold_boolean_mask_event(dr_jTower_muon,threshold)
+        mask=dr_threshold_boolean_mask_event(dr_jTower_muon,lower_threshold,upper_threshold)
 
         #Apply the mask to the energy vector. This will select only the energies corresponding to the jTower pixels marked as TRUE
         result=jTower_et_event[mask]
@@ -673,7 +675,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
 
     return(isolated_energy_event)
 
-def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, threshold, event_range, batch_size):
+def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size):
     """
     This function computes muon isolation for all events in batches of a certain size to avoid crashing the computer.
     
@@ -732,7 +734,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, threshold, event_r
                 isol_event = muon_isolation_one_event(
                     muon_eta_event, muon_phi_event,
                     jTower_eta_event, jTower_phi_event, jTower_et_event,
-                    threshold
+                    lower_threshold,upper_threshold
                 )
                 #and append it to the result
                 res.append(isol_event)
