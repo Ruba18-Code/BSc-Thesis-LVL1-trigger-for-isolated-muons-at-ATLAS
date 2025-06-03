@@ -162,12 +162,12 @@ res=muon_isolation_all_events(MuonTree_Zmumu,muon_eta_all,muon_phi_all,0.0,0.4,[
 data2=ak.flatten(res)
 
 #Perform the plot
-colors=['b','r']
+colors=["#0072B2", "#FD0000"]
 labels=[fr"Zero Bias LVL1 muons, events={non_empty_count1}",
         fr"Z $\longrightarrow \mu \mu$ LVL1 muons, events={non_empty_count2}"]
 
-coolplot([data1,data2],np.linspace(0,30000,25),colors,labels,"Transverse energy (MeV)","Counts",
-         r"Energy histogram isolated muons - LVL1 data - $\Delta R$ threshold $=$ [0,0.4]")
+coolplot([data1,data2],np.linspace(0,30000,25),colors,labels,"Isolation (MeV)","Counts",
+         r"Isolation histogram muons - LVL1 data - $\Delta R$ threshold $=$ [0,0.4]")
 
 print("The mean values are:\n 1.Zero Bias:", int(ak.mean(data1)), "MeV \n" r" 2.Z->μμ:", int(ak.mean(data2)), "MeV\n")
 

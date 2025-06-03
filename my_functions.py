@@ -631,7 +631,7 @@ def dr_threshold_boolean_mask_event(event_dr,lower_threshold,upper_threshold):
     return (lower_threshold < event_dr) & (event_dr < upper_threshold)
     
 def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, jTower_phi_event, jTower_et_event,
-                             lower_threshold,upper_threshold):
+                             lower_threshold,upper_threshold, get_mask):
 
     """
     Inputs:
@@ -644,6 +644,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
         -Array containing the values of jTower transverse energy in MeV for an event (jTower_et_event)
 
         -Two scalars that indicate the lower and upper threshold for delta r
+        -get_mask: boolean that indicates if the mask should be returned or not, False by default
 
     It will return an array containing the isolated muon energy of each muon inside the event.
 
@@ -653,7 +654,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
     """
 
     isolated_energy_event=[]
-
+    masks=[]
     for (eta, phi) in zip(muon_eta_event, muon_phi_event):
         #Generate pairs of [muon,jTower1],[muon,jTower2]...
         #That's an array where the left column is the value of a muon (always the same) and the right column contains all the jTower values
@@ -669,15 +670,21 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
 
         #Apply the mask to the energy vector. This will select only the energies corresponding to the jTower pixels marked as TRUE
         result=jTower_et_event[mask]
-
+        #if get_mask is True, append the mask to the result
+        if get_mask==True:
+            masks.append(mask)
         #Take the negative values out (they appear due to technical features of the detector)
         #Sum up the results to get an estimate of the isolated muon energy in MeV
-        T=np.sum(result[result >= 0])
-        isolated_energy_event.append(T)
+        if len(result) > 0:
+            T=np.sum(result[result >= 0])
+            isolated_energy_event.append(T)
+        else:
+            isolated_energy_event.append(np.nan)
+    
+    #if get_mask is True, return the result and the mask, otherwise just the result
+    return isolated_energy_event, masks
 
-    return(isolated_energy_event)
-
-def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size):
+def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size, get_mask=False):
     """
     This function computes muon isolation for all events in batches of a certain size to avoid crashing the computer.
     
@@ -687,12 +694,14 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
         threshold: float that sets the maximum acceptable value for delta R (typically 0.4)
         event_range: tuple of [start_event, end_event]. To use the full dataset write [0,len(muon_eta_all)]
         batch_size: int that sets the number of events to process at once (shouldn't be larger than 5.000-10.000 for a PC with 8gb of RAM)
+        get_mask: boolean that indicates if the mask should be returned or not, False by default
     Returns:
         List of isolated muon energies per event
     """
 
     start_event, end_event = event_range
     res = []
+    masks=[]
 
     # Process in batches to avoid memory overload (crash due to lack of RAM)
 
@@ -733,13 +742,18 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
                 jTower_phi_event = jTower_phi_batch[i]
                 jTower_et_event  = jTower_et_batch[i]
 
-                isol_event = muon_isolation_one_event(
+                isol_event, mask = muon_isolation_one_event(
                     muon_eta_event, muon_phi_event,
                     jTower_eta_event, jTower_phi_event, jTower_et_event,
-                    lower_threshold,upper_threshold
-                )
+                    lower_threshold,upper_threshold, get_mask)
                 #and append it to the result
                 res.append(isol_event)
-
-    return res
+                #if get_mask is True, append the mask to the result
+                if get_mask==True:
+                    masks.append(mask)
+    #if get_mask is True, return the result and the mask, otherwise just the result
+    if get_mask==True:
+        return res, masks
+    else:
+        return res
 # %%

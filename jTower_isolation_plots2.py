@@ -85,7 +85,7 @@ def f_subplots(lower_dr_arr,upper_dr_arr):
     for i in range(len(lower_dr_arr)):
         f(lower_dr_arr[i],upper_dr_arr[i],ax[i])
 
-    fig.suptitle(r"Comparison of different $\Delta R$ upper limits - Offline data", fontsize=16)  # Set the global title
+    fig.suptitle(r"Comparison of different $\Delta R$ limits - Offline data", fontsize=16)  # Set the global title
     plt.tight_layout(rect=[0, 0, 1, 0.98])  # Adjust layout to leave space for suptitle
     plt.show()
 
@@ -98,6 +98,11 @@ f_subplots(low_dr_arr,upper_dr_arr)
 # %%
 low_dr_arr=[0,0.1,0.2,0.3]
 upper_dr_arr=[0.4,0.4,0.4,0.4]
+
+f_subplots(low_dr_arr,upper_dr_arr)
+
+low_dr_arr=[0,0.2,0.4,0.6]
+upper_dr_arr=[0.4,0.6,0.8,1.0]
 
 f_subplots(low_dr_arr,upper_dr_arr)
 
