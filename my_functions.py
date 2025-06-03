@@ -76,7 +76,7 @@ def histogram2errors(data1, data2, nbins, x_range, x_label, y_label, title_label
     plt.tight_layout()
     plt.show()
 
-def coolplot(data,bins,colors,labels,x_label,y_label,title):
+def coolplot(data,bins,colors,labels,x_label,y_label,title, plot_show=True):
 
     #This function is designed to create a comparative histogram of N sets of data with their respective errorbars included.
     #Introduce a data vector, that contains one column for each dataset that has to be plotted data=[[set_a],[set_b],...]
@@ -133,7 +133,8 @@ def coolplot(data,bins,colors,labels,x_label,y_label,title):
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
-    plt.show()
+    if plot_show:
+        plt.show()
 
 #--------------------------------------------------------------------------------
 
