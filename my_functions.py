@@ -94,9 +94,6 @@ def coolplot(data,bins,colors,labels,x_label,y_label,title, plot_show=True):
 
     hists=[]
     error=[]
-    hists_norm=[]
-    error_norm=[]
-
     #Compute the histogram and error for every dataset
     for i in range(len(data)):
         hists.append(np.histogram(ak.flatten(data[i], axis=None),bins=bins_overflow)[0])
@@ -709,7 +706,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
 
     #tqdm is used to get a progress bar that estimates the remaining time 
     #batch_stop is written like that to prevent going out of range
-    for batch_start in tqdm(range(0, total_events, batch_size)):
+    for batch_start in tqdm(range(0, total_events, batch_size), desc="Computing muon isolation"):
         batch_stop = min(batch_start + batch_size, total_events)
 
         # Load jTower data only for the current batch
@@ -756,4 +753,70 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
         return res, masks
     else:
         return res
+    
+
+#####################################################################################################################################3
+
+def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range, bins, dr_min, dr_max):
+    #Unpack the ranges
+    nmin1, nmax1 = Zmumu_range
+    nmin2, nmax2 = ZeroBias_range
+
+    #Get the data from trees
+    #Z->mu mu
+    Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
+    Zmumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
+    Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
+
+    #ZeroBias
+    ZeroBias_pt=MuonTree_ZeroBias["muon_pt"].array()[nmin2:nmax2]
+    ZeroBias_eta=MuonTree_ZeroBias["muon_eta"].array()[nmin2:nmax2]
+    ZeroBias_phi=MuonTree_ZeroBias["muon_phi"].array()[nmin2:nmax2]
+
+    #Flatten the arrays (to divide later)
+    Zmumu_pt=ak.flatten(Zmumu_pt)
+    ZeroBias_pt=ak.flatten(ZeroBias_pt)
+
+    legend=[]
+    #Loop over the different dr_min and dr_max
+    for i in tqdm(range(len(dr_min)), desc="Computing ROC curve", colour="green"):
+        # Compute Z->mu mu isolation for a given dr_min and dr_max
+        Zmumu_isolation = muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi,
+                                                    dr_min[i], dr_max[i], [nmin1, nmax1], 500)
+        
+        Zmumu_data = ak.flatten(Zmumu_isolation)
+
+        #Compute ZeroBias isolation for a given dr_min and dr_max
+        ZeroBias_isolation = muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi,
+                                                        dr_min[i], dr_max[i], [nmin2, nmax2], 500)
+        
+        ZeroBias_data = ak.flatten(ZeroBias_isolation)
+
+        # Get the ratio of isolation to pt
+        Zmumu_ratio = Zmumu_data / Zmumu_pt
+        ZeroBias_ratio = ZeroBias_data / ZeroBias_pt
+
+        # Generate histogram counts (don't plot, just get the counts)
+        Zmumu_counts, _ = np.histogram(Zmumu_ratio, bins=bins)
+        ZeroBias_counts, _ = np.histogram(ZeroBias_ratio, bins=bins)
+        
+        #Compute the cumulative sum of the counts (like integrating the histogram to the left)
+        Zmumu_cumulative_counts = np.cumsum(Zmumu_counts)
+        ZeroBias_cumulative_counts = np.cumsum(ZeroBias_counts)
+
+        # Normalize to total events
+        TPR = Zmumu_cumulative_counts / np.sum(Zmumu_counts)
+        FPR = ZeroBias_cumulative_counts / np.sum(ZeroBias_counts)
+
+        plt.plot(FPR, TPR, marker=".")
+        legend.append(fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
+
+    plt.grid(alpha=0.5, linestyle="--")
+    plt.xlabel("False Positive Rate (FPR)")
+    plt.ylabel("True Positive Rate (TPR)")
+    plt.title(fr"ROC Curve - Comparing different $\Delta R$ ranges")
+    plt.legend(legend, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.figure(figsize=(12,6))
+    plt.tight_layout() 
+    plt.show()
 # %%
