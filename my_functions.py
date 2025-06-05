@@ -431,8 +431,11 @@ def delta_r(etapairs, phipairs):
     and also an array containing pais of phi: phipairs=([phi1,phi2],[phi3,phi4],...)
 
     It also works for just one pair.
+
+    Important: this function returns the square of the delta r, not the square root. I've done this because
+    of performance reasons. As a consequence, the delta r threshold should be squared as well.
     """
-    return np.hypot(delta_eta(etapairs),delta_phi(phipairs))
+    return delta_eta(etapairs)**2 + delta_phi(phipairs)**2
 #---------------------------------------------------------------------------
 
 def rate_calculator(data,cut,scaling_factor):
@@ -623,9 +626,11 @@ def dr_threshold_boolean_mask_event(event_dr,lower_threshold,upper_threshold):
     shorter and apparently more resource efficient
 
     The idea is to apply this boolean mask to the energy vector, that will select the energy elements that are associated with the muon
+
+    Important: the threshold is squared because the delta r function returns the square of the delta r, not the square root.
     """
     event_dr = np.array(event_dr)  # ensures it's a NumPy array
-    return (lower_threshold < event_dr) & (event_dr < upper_threshold)
+    return (lower_threshold**2 < event_dr) & (event_dr < upper_threshold**2)
     
 def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, jTower_phi_event, jTower_et_event,
                              lower_threshold,upper_threshold, get_mask):
@@ -822,46 +827,36 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range
 
 
 ##############################################################################################################################33
-def energy_cut(energy_array, lower_cut= 14*10**3, upper_cut=np.inf):
+def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """
     The idea of this function is to take an energy array (or pt array using the massless approximation) and select events that are 
-    contained in a certain energy range [lower_cut, upper_cut].
+    contained in a certain energy range [lower_cut, upper_cut]. It also removes events with no muons.
 
     In my case I'll apply it to ZeroBias data and my typical threshold is lower_cut=14 Gev, so 14*10**3 MeV.
-    
     Important: if the input is LVL1 data, the energy is measured in GeV, so the threshold should be 14 GeV, not 14*10**3 MeV.
-    """
 
-    #Check if the input is an awkward array
-    if not isinstance(energy_array, ak.highlevel.Array):
-        raise ValueError("The input type is :" + str(type(energy_array)) + 
-                         ", which is not supported. Try adding .array() to the end of the input name.")
-        
-    new_energy_array=ak.Array([])
-    #Take into account that the array may be nested (1 level of nesting)
-    for event in tqdm(energy_array, desc="Selecting events"):
-        #If the event is empty, skip it
-        if len(event)==0:
-            continue
-        #If the event has only one element, check if it is in the range
-        if len(event)==1:
-            if (event >= lower_cut) and (event <= upper_cut):
-                #If it is, add it to the new array
-                new_energy_array=ak.concatenate([new_energy_array,ak.Array([event])])
-            else:
-                continue
-        #If the event has more than one element
-        if len(event)>1:
-            aux=ak.Array([])
-            #Check each element in the event
-            for muon in event:
-                #If the element is in the range, add it to the new array
-                if (muon >= lower_cut) and (muon <= upper_cut):
-                    aux=ak.concatenate([aux,ak.Array([muon])])
-            #If the new array is not empty, add it to the new array
-            if len(aux)>0:
-                new_energy_array=ak.concatenate([new_energy_array,[aux]])
-    #Print the percentage of events that have survived the cut
-    print("Only", np.round(len(new_energy_array)/len(energy_array)*100,2), "% of the events have survived the cut")
-    return ak.Array(new_energy_array)
+    Inputs:
+        energy_array: array containing the energy of the muons
+        muon_array: array containing the muons (pt, eta, phi or any other variable, with the same shape as the energy array)
+        lower_cut: lower cut for the energy
+        upper_cut: upper cut for the energy
+
+    Returns:
+        muon_array: array containing the muons that are contained in the energy range
+    """
+    #remove events with energy outside the range
+    mask1=(energy_array>=lower_cut) & (energy_array<=upper_cut)
+    muon_array=muon_array[mask1]
+
+    #remove events with no muons
+    mask2=ak.num(muon_array,axis=1)>0
+    muon_array=muon_array[mask2]
+
+    if upper_cut==np.inf:
+        print(f"energy_cut: Only {np.round(len(muon_array)/len(energy_array)*100,2)}% of the events have survived the cut",
+              f"with a lower cut of {lower_cut} and no upper cut")
+    else:
+        print(f"energy_cut: Only {np.round(len(muon_array)/len(energy_array)*100,2)}% of the events have survived the cut",
+              f"with a lower cut of {lower_cut} and an upper cut of {upper_cut}")
+    return muon_array
 # %%
