@@ -819,4 +819,49 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range
     plt.figure(figsize=(12,6))
     plt.tight_layout() 
     plt.show()
+
+
+##############################################################################################################################33
+def energy_cut(energy_array, lower_cut= 14*10**3, upper_cut=np.inf):
+    """
+    The idea of this function is to take an energy array (or pt array using the massless approximation) and select events that are 
+    contained in a certain energy range [lower_cut, upper_cut].
+
+    In my case I'll apply it to ZeroBias data and my typical threshold is lower_cut=14 Gev, so 14*10**3 MeV.
+    
+    Important: if the input is LVL1 data, the energy is measured in GeV, so the threshold should be 14 GeV, not 14*10**3 MeV.
+    """
+
+    #Check if the input is an awkward array
+    if not isinstance(energy_array, ak.highlevel.Array):
+        raise ValueError("The input type is :" + str(type(energy_array)) + 
+                         ", which is not supported. Try adding .array() to the end of the input name.")
+        
+    new_energy_array=ak.Array([])
+    #Take into account that the array may be nested (1 level of nesting)
+    for event in tqdm(energy_array, desc="Selecting events"):
+        #If the event is empty, skip it
+        if len(event)==0:
+            continue
+        #If the event has only one element, check if it is in the range
+        if len(event)==1:
+            if (event >= lower_cut) and (event <= upper_cut):
+                #If it is, add it to the new array
+                new_energy_array=ak.concatenate([new_energy_array,ak.Array([event])])
+            else:
+                continue
+        #If the event has more than one element
+        if len(event)>1:
+            aux=ak.Array([])
+            #Check each element in the event
+            for muon in event:
+                #If the element is in the range, add it to the new array
+                if (muon >= lower_cut) and (muon <= upper_cut):
+                    aux=ak.concatenate([aux,ak.Array([muon])])
+            #If the new array is not empty, add it to the new array
+            if len(aux)>0:
+                new_energy_array=ak.concatenate([new_energy_array,[aux]])
+    #Print the percentage of events that have survived the cut
+    print("Only", np.round(len(new_energy_array)/len(energy_array)*100,2), "% of the events have survived the cut")
+    return ak.Array(new_energy_array)
 # %%
