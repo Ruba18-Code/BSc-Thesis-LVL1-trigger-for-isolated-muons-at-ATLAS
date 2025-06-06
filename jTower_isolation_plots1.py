@@ -29,16 +29,18 @@ Z -> mu mu vs Zero Bias Offline
 
 
 #Assign eta and phi variables Zero Bias
-muon_eta_all=MuonTree_ZeroBias["muon_eta"].array()
-muon_phi_all=MuonTree_ZeroBias["muon_phi"].array()
 nmin1=0
-nmax1=2000
+nmax1=500
+
+ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin1:nmax1]
+ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin1:nmax1]
+ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin1:nmax1]
 
 #Check how many events are not empty
-non_empty_count1 = ak.sum(ak.num(muon_eta_all[nmin1:nmax1]) > 0)
+non_empty_count1 = ak.sum(ak.num(ZeroBias_eta[nmin1:nmax1]) > 0)
 
 #Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_ZeroBias,muon_eta_all,muon_phi_all,0.0,0.4,[nmin1,nmax1],500)
+res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin1,nmax1],500)
 data1=ak.flatten(res)
 
 #Assign eta and phi variables Z mu mu
@@ -59,16 +61,18 @@ Z -> mu mu vs ZeroBias offline QUALITY 0
 """
 
 #Assign eta and phi variables Zero Bias
-muon_eta_all=MuonTree_ZeroBias["muon_eta"].array()
-muon_phi_all=MuonTree_ZeroBias["muon_phi"].array()
 nmin3=0
-nmax3=2000
+nmax3=500
+
+ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin3:nmax3]
+ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin3:nmax3]
+ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin3:nmax3]
 
 #Check how many events are not empty
 non_empty_count3 = ak.sum(ak.num(muon_eta_all[nmin3:nmax3]) > 0)
 
 #Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_ZeroBias,muon_eta_all,muon_phi_all,0.0,0.4,[nmin3,nmax3],500)
+res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin3,nmax3],500)
 data3=ak.flatten(res)
 
 #Assign eta and phi variables Z mu mu
@@ -140,16 +144,19 @@ Z -> mu mu vs Zero Bias LVL1
 """
 
 #Assign eta and phi variables Zero Bias
-muon_eta_all=MuonTree_ZeroBias["LVL1Muon_eta"].array()
-muon_phi_all=MuonTree_ZeroBias["LVL1Muon_phi"].array()
 nmin1=0
-nmax1=5000
+nmax1=500
+
+ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin1:nmax1]
+ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin1:nmax1]
+ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin1:nmax1]
+
 
 #Check how many events are not empty
-non_empty_count1 = ak.sum(ak.num(muon_eta_all[nmin1:nmax1]) > 0)
+non_empty_count1 = ak.sum(ak.num(ZeroBias_eta[nmin1:nmax1]) > 0)
 
 #Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_ZeroBias,muon_eta_all,muon_phi_all,0.0,0.4,[nmin1,nmax1],500)
+res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin1,nmax1],500)
 data1=ak.flatten(res)
 
 #Assign eta and phi variables Z mu mu

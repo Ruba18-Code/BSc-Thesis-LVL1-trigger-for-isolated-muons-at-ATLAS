@@ -23,12 +23,16 @@ DIFFERENT DELTA R LIMITS - CHANGING LOWER AND UPPER LIMITS
 Z_mumu_nmin1=0
 Z_mumu_nmax1=250
 
+#Apply energy cut
+Z_mumu_eta=MuonTree_Zmumu["muon_eta"].array()[Z_mumu_nmin1:Z_mumu_nmax1]
+Z_mumu_phi=MuonTree_Zmumu["muon_phi"].array()[Z_mumu_nmin1:Z_mumu_nmax1]
+Z_mumu_pt=MuonTree_Zmumu["muon_pt"].array()[Z_mumu_nmin1:Z_mumu_nmax1]
+Z_mumu_quality=MuonTree_Zmumu["muon_quality"].array()[Z_mumu_nmin1:Z_mumu_nmax1]
+
 #Assign eta and phi variables Zmumu
-Z_mumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)
-Z_mumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)
-Z_mumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[Z_mumu_nmin1:Z_mumu_nmax1]
-
-
+Z_mumu_eta=quality_selector(Z_mumu_quality,Z_mumu_eta,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+Z_mumu_phi=quality_selector(Z_mumu_quality,Z_mumu_phi,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+Z_mumu_pt=quality_selector(Z_mumu_quality,Z_mumu_pt,0)[Z_mumu_nmin1:Z_mumu_nmax1]
 
 #Check how many events are not empty
 Z_mumu_non_empty_count = ak.sum(ak.num(Z_mumu_eta[Z_mumu_nmin1:Z_mumu_nmax1]) > 0)
@@ -38,20 +42,13 @@ ZeroBias_nmin1=0
 ZeroBias_nmax1=2500
 
 #Assign eta and phi variables Zero Bias
-ZeroBias_eta=MuonTree_ZeroBias["muon_eta"].array()
-ZeroBias_phi=MuonTree_ZeroBias["muon_phi"].array()
-ZeroBias_pt=MuonTree_ZeroBias["muon_pt"].array()[ZeroBias_nmin1:ZeroBias_nmax1]
-
+ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
+ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
+ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
 
 #Check how many events are not empty
 ZeroBias_non_empty_count = ak.sum(ak.num(ZeroBias_eta[ZeroBias_nmin1:ZeroBias_nmax1]) > 0)
-#Set upper and lower limits
-lower_dr1=0
-upper_dr1=0.4
 
-
-
-# %%
 """
 I define this functions to plot everything more comfortably and as subplots
 """
@@ -93,8 +90,6 @@ def f_subplots(lower_dr_arr,upper_dr_arr):
     plt.tight_layout(rect=[0, 0, 1, 0.98])  # Adjust layout to leave space for suptitle
     plt.show()
 
-
-# %%
 # %%
 low_dr_arr=[0,0,0,0]
 upper_dr_arr=[0.25,0.4,0.6,0.8]

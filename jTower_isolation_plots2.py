@@ -26,25 +26,21 @@ Z_mumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmum
 
 #Choose the number of events to plot
 Z_mumu_nmin1=0
-Z_mumu_nmax1=250
+Z_mumu_nmax1=300
 
 #Check how many events are not empty
 Z_mumu_non_empty_count = ak.sum(ak.num(Z_mumu_eta[Z_mumu_nmin1:Z_mumu_nmax1]) > 0)
 
 #Assign eta and phi variables Zero Bias
-ZeroBias_eta=MuonTree_ZeroBias["muon_eta"].array()
-ZeroBias_phi=MuonTree_ZeroBias["muon_phi"].array()
+nmin3=0
+nmax3=300
 
-#Choose the number of events to plot
-ZeroBias_nmin1=0
-ZeroBias_nmax1=2500
+ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin3:nmax3]
+ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin3:nmax3]
+ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin3:nmax3]
 
 #Check how many events are not empty
-ZeroBias_non_empty_count = ak.sum(ak.num(ZeroBias_eta[ZeroBias_nmin1:ZeroBias_nmax1]) > 0)
-#Set upper and lower limits
-lower_dr1=0
-upper_dr1=0.4
-
+ZeroBias_non_empty_count = ak.sum(ak.num(ZeroBias_eta[nmin3:nmax3]) > 0)
 
 
 # %%
@@ -60,7 +56,7 @@ def f(lower_dr,upper_dr,ax):
     Z_mumu_res=muon_isolation_all_events(MuonTree_ZeroBias,Z_mumu_eta,Z_mumu_phi,lower_dr,upper_dr,[Z_mumu_nmin1,Z_mumu_nmax1],100)
     Z_mumu_data=ak.flatten(Z_mumu_res)
 
-    ZeroBias_res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,lower_dr,upper_dr,[ZeroBias_nmin1,ZeroBias_nmax1],1000)
+    ZeroBias_res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,lower_dr,upper_dr,[nmin3,nmax3],1000)
     ZeroBias_data=ak.flatten(ZeroBias_res)
 
     #Set the colors and labels for the plot

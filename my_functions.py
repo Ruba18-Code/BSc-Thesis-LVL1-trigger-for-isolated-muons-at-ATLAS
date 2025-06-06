@@ -762,7 +762,25 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
 
 #####################################################################################################################################3
 
-def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range, bins, dr_min, dr_max):
+def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, e_cut=14*10**3):
+
+    """
+    This function plots the ROC curve for a given delta r range.
+
+    Inputs:
+        MuonTree_Zmumu: tree containing the Z->mu mu data
+        MuonTree_ZeroBias: tree containing the ZeroBias data
+        Zmumu_range: range of the Z->mu mu data
+        ZeroBias_range: range of the ZeroBias data
+        bins: bins for the histogram
+        dr_min: minimum delta r
+        dr_max: maximum delta r
+        e_cut: energy cut
+
+    Returns:
+        Plot of the ROC curve
+    """
+
     #Unpack the ranges
     nmin1, nmax1 = Zmumu_range
     nmin2, nmax2 = ZeroBias_range
@@ -774,9 +792,9 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range
     Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
 
     #ZeroBias
-    ZeroBias_pt=MuonTree_ZeroBias["muon_pt"].array()[nmin2:nmax2]
-    ZeroBias_eta=MuonTree_ZeroBias["muon_eta"].array()[nmin2:nmax2]
-    ZeroBias_phi=MuonTree_ZeroBias["muon_phi"].array()[nmin2:nmax2]
+    ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array(), e_cut)[nmin2:nmax2]
+    ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array(), e_cut)[nmin2:nmax2]
+    ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array(), e_cut)[nmin2:nmax2]
 
     #Flatten the arrays (to divide later)
     Zmumu_pt=ak.flatten(Zmumu_pt)
@@ -812,8 +830,7 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range
         # Normalize to total events
         TPR = Zmumu_cumulative_counts / np.sum(Zmumu_counts)
         FPR = ZeroBias_cumulative_counts / np.sum(ZeroBias_counts)
-
-        plt.plot(FPR, TPR, marker=".")
+        plt.plot(FPR, TPR, marker=".", label=fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
         legend.append(fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
 
     plt.grid(alpha=0.5, linestyle="--")
@@ -821,7 +838,6 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range
     plt.ylabel("True Positive Rate (TPR)")
     plt.title(fr"ROC Curve - Comparing different $\Delta R$ ranges")
     plt.legend(legend, loc='center left', bbox_to_anchor=(1, 0.5))
-    plt.figure(figsize=(12,6))
     plt.tight_layout() 
     plt.show()
 

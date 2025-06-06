@@ -16,12 +16,18 @@ nmin1=0
 nmax1=500
 
 nmin2=0
-nmax2=4000
+nmax2=500
+
+ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
+ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
+ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 # %%
 """
 Z->mumu any quality
 """
+
+
 
 #Compute the isolation for Z->mu mu events
 pt_events=MuonTree_Zmumu["muon_pt"].array()[nmin1:nmax1]
@@ -38,12 +44,11 @@ ratio1=data2/data1
 not_empty_count1 = ak.sum(ak.num(pt_events) > 0)
 
 #Compute the isolation for Zero Bias events
-pt_events=MuonTree_ZeroBias["muon_pt"].array()[nmin2:nmax2]
-eta_events=MuonTree_ZeroBias["muon_eta"].array()[nmin2:nmax2]
-phi_events=MuonTree_ZeroBias["muon_phi"].array()[nmin2:nmax2]
 
-data1=ak.flatten(pt_events)
-isolation =muon_isolation_all_events(MuonTree_ZeroBias, eta_events, phi_events, dr_min, dr_max, [nmin2,nmax2], 1000)
+
+
+data1=ak.flatten(ZeroBias_pt)
+isolation =muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2], 1000)
 data2=ak.flatten(isolation)
 
 ratio2=data2/data1
