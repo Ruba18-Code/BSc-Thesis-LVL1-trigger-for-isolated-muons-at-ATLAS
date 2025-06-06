@@ -13,10 +13,10 @@ dr_min=0.0
 dr_max=0.4
 
 nmin1=0
-nmax1=500
+nmax1=1000
 
 nmin2=0
-nmax2=500
+nmax2=1000
 
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
 ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
@@ -136,7 +136,7 @@ f_subplots()
 Z->mumu any quality
 """
 nmin1=0
-nmax1=400
+nmax1=1000
 #Compute the isolation for Z->mu mu events
 pt_events=MuonTree_Zmumu["LVL1Muon_et"].array()[nmin1:nmax1]
 eta_events=MuonTree_Zmumu["LVL1Muon_eta"].array()[nmin1:nmax1]

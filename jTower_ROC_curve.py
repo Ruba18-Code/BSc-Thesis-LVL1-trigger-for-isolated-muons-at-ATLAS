@@ -8,10 +8,10 @@ MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 
 # %%
 nmin1=0
-nmax1=200
+nmax1=1000
 
 nmin2=0
-nmax2=200
+nmax2=1000
 
 
 # %%

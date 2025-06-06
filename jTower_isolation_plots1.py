@@ -30,7 +30,7 @@ Z -> mu mu vs Zero Bias Offline
 
 #Assign eta and phi variables Zero Bias
 nmin1=0
-nmax1=500
+nmax1=1000
 
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin1:nmax1]
 ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin1:nmax1]
@@ -47,7 +47,7 @@ data1=ak.flatten(res)
 muon_eta_all=MuonTree_Zmumu["muon_eta"].array()
 muon_phi_all=MuonTree_Zmumu["muon_phi"].array()
 nmin2=0
-nmax2=300
+nmax2=1000
 #Check how many events are not empty
 non_empty_count2 = ak.sum(ak.num(muon_eta_all[nmin2:nmax2]) > 0)
 
@@ -62,7 +62,7 @@ Z -> mu mu vs ZeroBias offline QUALITY 0
 
 #Assign eta and phi variables Zero Bias
 nmin3=0
-nmax3=500
+nmax3=1000
 
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin3:nmax3]
 ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin3:nmax3]
@@ -79,7 +79,7 @@ data3=ak.flatten(res)
 muon_eta_all=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)
 muon_phi_all=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)
 nmin4=0
-nmax4=300
+nmax4=1000
 #Check how many events are not empty
 non_empty_count4 = ak.sum(ak.num(muon_eta_all[nmin4:nmax4]) > 0)
 
@@ -145,7 +145,7 @@ Z -> mu mu vs Zero Bias LVL1
 
 #Assign eta and phi variables Zero Bias
 nmin1=0
-nmax1=500
+nmax1=1000
 
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin1:nmax1]
 ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin1:nmax1]
@@ -163,7 +163,7 @@ data1=ak.flatten(res)
 muon_eta_all=MuonTree_Zmumu["LVL1Muon_eta"].array()
 muon_phi_all=MuonTree_Zmumu["LVL1Muon_phi"].array()
 nmin2=0
-nmax2=300
+nmax2=1000
 #Check how many events are not empty
 non_empty_count2 = ak.sum(ak.num(muon_eta_all[nmin2:nmax2]) > 0)
 

@@ -21,7 +21,7 @@ DIFFERENT DELTA R LIMITS - CHANGING LOWER AND UPPER LIMITS
 """""""""""""""""""""""""""""""""
 #Choose the number of events to plot
 Z_mumu_nmin1=0
-Z_mumu_nmax1=300
+Z_mumu_nmax1=1000
 
 #Apply energy cut
 Z_mumu_eta=MuonTree_Zmumu["muon_eta"].array()
@@ -39,7 +39,7 @@ Z_mumu_non_empty_count = ak.sum(ak.num(Z_mumu_eta[Z_mumu_nmin1:Z_mumu_nmax1]) > 
 
 #Choose the number of events to plot
 ZeroBias_nmin1=0
-ZeroBias_nmax1=300
+ZeroBias_nmax1=1000
 
 #Assign eta and phi variables Zero Bias
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[ZeroBias_nmin1:ZeroBias_nmax1]

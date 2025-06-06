@@ -26,14 +26,14 @@ Z_mumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmum
 
 #Choose the number of events to plot
 Z_mumu_nmin1=0
-Z_mumu_nmax1=300
+Z_mumu_nmax1=1000
 
 #Check how many events are not empty
 Z_mumu_non_empty_count = ak.sum(ak.num(Z_mumu_eta[Z_mumu_nmin1:Z_mumu_nmax1]) > 0)
 
 #Assign eta and phi variables Zero Bias
 nmin3=0
-nmax3=300
+nmax3=1000
 
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin3:nmax3]
 ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin3:nmax3]
@@ -53,7 +53,7 @@ def f(lower_dr,upper_dr,ax):
     plt.sca(ax)
 
     #Compute the isolation and prepare it for plotting 
-    Z_mumu_res=muon_isolation_all_events(MuonTree_ZeroBias,Z_mumu_eta,Z_mumu_phi,lower_dr,upper_dr,[Z_mumu_nmin1,Z_mumu_nmax1],100)
+    Z_mumu_res=muon_isolation_all_events(MuonTree_ZeroBias,Z_mumu_eta,Z_mumu_phi,lower_dr,upper_dr,[Z_mumu_nmin1,Z_mumu_nmax1],1000)
     Z_mumu_data=ak.flatten(Z_mumu_res)
 
     ZeroBias_res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,lower_dr,upper_dr,[nmin3,nmax3],1000)
