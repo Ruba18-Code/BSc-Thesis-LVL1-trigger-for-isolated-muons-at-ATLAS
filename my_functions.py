@@ -387,7 +387,7 @@ def quality_selector(quality_data, muon_data, value):
     selected_data = muon_data[event_mask]
 
     # Compute the selection percentage
-    print("Only", (len(selected_data) / len(muon_data)) * 100, r"% of the data has been selected")
+    print("quality_selector: Only", (len(selected_data) / len(muon_data)) * 100, r"% of the data has been selected")
 
     return selected_data
 
@@ -661,11 +661,19 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
         #Generate pairs of [muon,jTower1],[muon,jTower2]...
         #That's an array where the left column is the value of a muon (always the same) and the right column contains all the jTower values
         #associated with such muon
+
+        #Take the jTowers with negative energy out (they appear due to technical features of the detector)
+        mask=jTower_et_event > 0
+        jTower_et_event=jTower_et_event[mask]
+        jTower_eta_event=jTower_eta_event[mask]
+        jTower_phi_event=jTower_phi_event[mask]
+
+        #Create pairs of [muon,jTower1],[muon,jTower2]...
         jTower_muon_eta_pairs=[(eta, stuff) for stuff in jTower_eta_event]
         jTower_muon_phi_pairs=[(phi, stuff) for stuff in jTower_phi_event]
 
         #Compute delta r with the (eta,phi) pairs
-        dr_jTower_muon=delta_r( jTower_muon_eta_pairs,jTower_muon_phi_pairs)
+        dr_jTower_muon=delta_r(jTower_muon_eta_pairs,jTower_muon_phi_pairs)
 
         #Create a boolean mask that will be 'True' only if the computed dr is smaller or equal than the threshold
         mask=dr_threshold_boolean_mask_event(dr_jTower_muon,lower_threshold,upper_threshold)
@@ -675,10 +683,10 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
         #if get_mask is True, append the mask to the result
         if get_mask==True:
             masks.append(mask)
-        #Take the negative values out (they appear due to technical features of the detector)
+        
         #Sum up the results to get an estimate of the isolated muon energy in MeV
         if len(result) > 0:
-            T=np.sum(result[result >= 0])
+            T=np.sum(result)
             isolated_energy_event.append(T)
         else:
             isolated_energy_event.append(np.nan)
@@ -711,7 +719,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
 
     #tqdm is used to get a progress bar that estimates the remaining time 
     #batch_stop is written like that to prevent going out of range
-    for batch_start in tqdm(range(0, total_events, batch_size), desc="Computing muon isolation"):
+    for batch_start in tqdm(range(0, total_events, batch_size), desc="muon_isolation_all_events: Computing muon isolation"):
         batch_stop = min(batch_start + batch_size, total_events)
 
         # Load jTower data only for the current batch
@@ -831,7 +839,7 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range
         TPR = Zmumu_cumulative_counts / np.sum(Zmumu_counts)
         FPR = ZeroBias_cumulative_counts / np.sum(ZeroBias_counts)
         plt.plot(FPR, TPR, marker=".", label=fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
-        legend.append(fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
+        legend.append(f"ΔR = [{np.round(dr_min[i], 2)}, {np.round(dr_max[i], 2)}]\nEvents = {len(Zmumu_isolation)}")
 
     plt.grid(alpha=0.5, linestyle="--")
     plt.xlabel("False Positive Rate (FPR)")

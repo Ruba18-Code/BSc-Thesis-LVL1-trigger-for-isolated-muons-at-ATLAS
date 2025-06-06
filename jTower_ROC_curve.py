@@ -12,8 +12,6 @@ nmax1=200
 
 nmin2=0
 nmax2=200
-dr_min=0.0
-dr_max=0.4
 
 
 # %%
