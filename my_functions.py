@@ -769,6 +769,68 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
         return res
     
 #####################################################################################################################################3
+def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max):
+    
+    """
+    This function computes the ROC curve for a given delta r range.
+
+    Inputs:
+        MuonTree_Zmumu: tree containing the Z->mu mu data (this feels unnecessary but to avoid it I'd have to update the 
+        muon_isolation_all_events function)
+        MuonTree_ZeroBias: tree containing the ZeroBias data (this feels unnecessary but to avoid it I'd have to update the 
+        muon_isolation_all_events function)
+        Zmumu_pt, Zmumu_eta, Zmumu_phi: pt, eta and phi of the Z->mu mu data
+        ZeroBias_pt, ZeroBias_eta, ZeroBias_phi: pt, eta and phi of the ZeroBias data
+
+    Returns:
+        ROC_curve: array of points of the ROC curve
+        events_Zmumu: array of the number of events in the Z->mu mu data
+        events_ZeroBias: array of the number of events in the ZeroBias data
+    """
+    #Unpack the ranges
+    nmin1, nmax1 = Zmumu_range
+    nmin2, nmax2 = ZeroBias_range
+
+    #Flatten the arrays (to divide later)
+    Zmumu_pt=ak.flatten(Zmumu_pt)
+    ZeroBias_pt=ak.flatten(ZeroBias_pt)
+
+    ROC_curve=[]
+    events_Zmumu=[]
+    events_ZeroBias=[]
+    #Loop over the different dr_min and dr_max
+    for i in tqdm(range(len(dr_min)), desc="Computing ROC curve", colour="green"):
+        # Compute Z->mu mu isolation for a given dr_min and dr_max
+        Zmumu_isolation = muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi,
+                                                    dr_min[i], dr_max[i], [nmin1, nmax1], 500)
+        events_Zmumu.append(len(Zmumu_isolation))
+        Zmumu_data = ak.flatten(Zmumu_isolation)
+
+        #Compute ZeroBias isolation for a given dr_min and dr_max
+        ZeroBias_isolation = muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi,
+                                                        dr_min[i], dr_max[i], [nmin2, nmax2], 500)
+        events_ZeroBias.append(len(ZeroBias_isolation))
+        ZeroBias_data = ak.flatten(ZeroBias_isolation)
+
+        # Get the ratio of isolation to pt
+        Zmumu_ratio = Zmumu_data / Zmumu_pt
+        ZeroBias_ratio = ZeroBias_data / ZeroBias_pt
+
+        # Generate histogram counts (don't plot, just get the counts)
+        Zmumu_counts, _ = np.histogram(Zmumu_ratio, bins)
+        ZeroBias_counts, _ = np.histogram(ZeroBias_ratio, bins)
+        
+        #Compute the cumulative sum of the counts (like integrating the histogram to the left)
+        Zmumu_cumulative_counts = np.cumsum(Zmumu_counts)
+        ZeroBias_cumulative_counts = np.cumsum(ZeroBias_counts)
+
+        # Normalize to total events
+        TPR = Zmumu_cumulative_counts / np.sum(Zmumu_counts)
+        FPR = ZeroBias_cumulative_counts / np.sum(ZeroBias_counts)
+        ROC_curve.append([FPR, TPR])
+        
+    return ROC_curve, events_Zmumu, events_ZeroBias
 
 def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                     Zmumu_range,ZeroBias_range, bins, dr_min, dr_max):
@@ -791,56 +853,27 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
 
     Returns:
         Plot of the ROC curve
+        ROC_curve: array of points of the ROC curve
     """
 
-    #Unpack the ranges
-    nmin1, nmax1 = Zmumu_range
-    nmin2, nmax2 = ZeroBias_range
-
-    #Flatten the arrays (to divide later)
-    Zmumu_pt=ak.flatten(Zmumu_pt)
-    ZeroBias_pt=ak.flatten(ZeroBias_pt)
-
     legend=[]
+    ROC_curve, events_Zmumu, _=compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max)
     #Loop over the different dr_min and dr_max
-    for i in tqdm(range(len(dr_min)), desc="Computing ROC curve", colour="green"):
-        # Compute Z->mu mu isolation for a given dr_min and dr_max
-        Zmumu_isolation = muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi,
-                                                    dr_min[i], dr_max[i], [nmin1, nmax1], 500)
-        
-        Zmumu_data = ak.flatten(Zmumu_isolation)
-
-        #Compute ZeroBias isolation for a given dr_min and dr_max
-        ZeroBias_isolation = muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi,
-                                                        dr_min[i], dr_max[i], [nmin2, nmax2], 500)
-        
-        ZeroBias_data = ak.flatten(ZeroBias_isolation)
-
-        # Get the ratio of isolation to pt
-        Zmumu_ratio = Zmumu_data / Zmumu_pt
-        ZeroBias_ratio = ZeroBias_data / ZeroBias_pt
-
-        # Generate histogram counts (don't plot, just get the counts)
-        Zmumu_counts, _ = np.histogram(Zmumu_ratio, bins=bins)
-        ZeroBias_counts, _ = np.histogram(ZeroBias_ratio, bins=bins)
-        
-        #Compute the cumulative sum of the counts (like integrating the histogram to the left)
-        Zmumu_cumulative_counts = np.cumsum(Zmumu_counts)
-        ZeroBias_cumulative_counts = np.cumsum(ZeroBias_counts)
-
-        # Normalize to total events
-        TPR = Zmumu_cumulative_counts / np.sum(Zmumu_counts)
-        FPR = ZeroBias_cumulative_counts / np.sum(ZeroBias_counts)
-        plt.plot(FPR, TPR, marker=".", label=fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
-        legend.append(f"ΔR = [{np.round(dr_min[i], 2)}, {np.round(dr_max[i], 2)}]\nEvents = {len(Zmumu_isolation)}")
+    for i in range(len(ROC_curve)):
+        plt.plot(ROC_curve[i][0], ROC_curve[i][1], marker=".", label=fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
+        legend.append(f"ΔR = [{np.round(dr_min[i], 2)}, {np.round(dr_max[i], 2)}]\nEvents = {events_Zmumu[i]}")
 
     plt.grid(alpha=0.5, linestyle="--")
     plt.xlabel("False Positive Rate (FPR)")
     plt.ylabel("True Positive Rate (TPR)")
     plt.title(fr"ROC Curve - Comparing different $\Delta R$ ranges")
-    plt.legend(legend, loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.legend(legend, loc='lower right') #loc='lower right' is used to avoid the legend to overlap with the plot
     plt.tight_layout() 
+    plt.plot([0,1],[0,1], linestyle="--", color="black")
     plt.show()
+
+    return ROC_curve
 
 
 ##############################################################################################################################33
