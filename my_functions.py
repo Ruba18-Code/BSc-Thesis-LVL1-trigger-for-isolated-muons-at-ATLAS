@@ -720,7 +720,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
 
     #tqdm is used to get a progress bar that estimates the remaining time 
     #batch_stop is written like that to prevent going out of range
-    for batch_start in tqdm(range(0, total_events, batch_size), desc="muon_isolation_all_events: Computing muon isolation"):
+    for batch_start in tqdm(range(0, total_events, batch_size), desc="muon_isolation_all_events: Computing muon isolation", leave=False):
         batch_stop = min(batch_start + batch_size, total_events)
 
         # Load jTower data only for the current batch
@@ -800,7 +800,7 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
     events_Zmumu=[]
     events_ZeroBias=[]
     #Loop over the different dr_min and dr_max
-    for i in tqdm(range(len(dr_min)), desc="Computing ROC curve", colour="green"):
+    for i in tqdm(range(len(dr_min)), desc="Computing ROC curve", colour="green", leave=False):
         # Compute Z->mu mu isolation for a given dr_min and dr_max
         Zmumu_isolation = muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi,
                                                     dr_min[i], dr_max[i], [nmin1, nmax1], 500)
@@ -828,8 +828,14 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
         # Normalize to total events
         TPR = Zmumu_cumulative_counts / np.sum(Zmumu_counts)
         FPR = ZeroBias_cumulative_counts / np.sum(ZeroBias_counts)
+
+        #Add the first point to the ROC curve, (0,0)
+        TPR=np.concatenate(([0],TPR))
+        FPR=np.concatenate(([0],FPR))
+
+        #Append the ROC curve to the list
         ROC_curve.append([FPR, TPR])
-        
+
     return ROC_curve, events_Zmumu, events_ZeroBias
 
 def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
@@ -875,7 +881,94 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
 
     return ROC_curve
 
+def ROC_curve_distance(ROC_curve):
+    """
+    This function aims to optimise the delta R parameters so I get the 'best' ROC curve. A good estimator is to 
+    minimise the distance between the curve and the top left corner. To do so, I can compute the distance for all
+    points and try to minimise it by adding small variations to an initial guess of delta R.
 
+    To begin with, this function computes the distance between the curve and the top left corner for all points,
+    using the pythagorean theorem.
+
+    Inputs:
+    - ROC_curve: array of points of the ROC curve
+
+    Returns:
+    - Distances: array of distances between the curve and the top left corner
+    """
+    distances=[]
+    for i in range(len(ROC_curve)):
+        distances.append(np.sqrt((1-ROC_curve[i][0])**2+(1-ROC_curve[i][1])**2))
+    return distances
+
+def ROC_curve_comparer(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
+                ZeroBias_phi, Zmumu_range, ZeroBias_range, bins, guess=[0.0,1.0], mean_distance=np.inf):
+    """
+    This function aims to optimise the delta R parameters so I get the 'best' ROC curve. A good estimator is to 
+    minimise the distance between the curve and the top left corner. To do so, I can compute the distance for all points
+    and try to minimise it by adding small variations to an initial guess of delta R.
+
+    Inputs:
+    - MuonTree_Zmumu: tree containing the Z->mu mu data
+    - MuonTree_ZeroBias: tree containing the ZeroBias data
+    - Zmumu_pt, Zmumu_eta, Zmumu_phi: pt, eta and phi of the Z->mu mu data
+    - ZeroBias_pt, ZeroBias_eta, ZeroBias_phi: pt, eta and phi of the ZeroBias data
+    - Zmumu_range: range of the Z->mu mu data
+    - ZeroBias_range: range of the ZeroBias data
+
+    Returns:
+    - mean_distance: mean distance between the curve and the top left corner
+    - distance: array of distances between the curve and the top left corner
+    - guess: guess of delta R
+    """
+
+    #Compute the ROC curve
+    ROC_curve, _, _=compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
+                ZeroBias_phi, Zmumu_range, ZeroBias_range, bins, [guess[0]], [guess[1]])
+
+    #Compute the distance
+    distance=ROC_curve_distance(ROC_curve)
+
+    #Compute the mean distance
+    mean_distance_aux=np.mean(distance)
+
+    #If the mean distance is lower than the previous mean distance, then the guess is better
+    if mean_distance_aux < mean_distance:
+
+        mean_distance=mean_distance_aux
+        #Set sucess to True
+        sucess=True
+    else:
+        #Set sucess to False
+        sucess=False
+
+    return(mean_distance, guess, sucess, np.array(distance))
+
+def ROC_curve_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
+                ZeroBias_phi, Zmumu_range, ZeroBias_range, bins, iterations=3, guess=[0.0,1.0]):
+    
+    current_mean=np.inf
+    bins=np.linspace(0,1,5000)
+    for i in tqdm(range(iterations), desc="ROC_curve_optimiser: iterating", leave=False):
+        new_mean, new_guess, _, _ = ROC_curve_comparer(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
+                ZeroBias_phi, Zmumu_range, ZeroBias_range, bins, guess)
+        if new_mean < current_mean:
+            current_mean=new_mean
+            current_guess=new_guess
+            new_guess=current_guess+np.random.uniform(-0.05,0.05,2)
+            if new_guess[0] < 0.0:
+                new_guess[0]=0.0
+            if new_guess[1] < 0.3:
+                new_guess[1]=0.3
+        else:
+            new_guess=current_guess+np.random.uniform(-0.05,0.05,2)
+            if new_guess[0] < 0.0:
+                new_guess[0]=0.0
+            if new_guess[1] < 0.3:
+                new_guess[1]=0.3
+        guess=new_guess
+
+    return(current_mean, current_guess)
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """
