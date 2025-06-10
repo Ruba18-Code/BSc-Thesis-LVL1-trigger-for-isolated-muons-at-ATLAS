@@ -33,11 +33,11 @@ non_empty_count1= ak.sum(ak.num(ZeroBias_eta[nmin:nmax]) > 0)
 non_empty_count2 = ak.sum(ak.num(Zmumu_eta[nmin:nmax]) > 0)
 
 #Compute the isolation and prepare it for plotting ZeroBias
-res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.8,[nmin,nmax],100)
+res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin,nmax],100)
 data1=ak.flatten(res)
 
 #Compute the isolation and prepare it for plotting Z mu mu
-res=muon_isolation_all_events(MuonTree_Zmumu,Zmumu_eta,Zmumu_phi,0.0,0.8,[nmin,nmax],100)
+res=muon_isolation_all_events(MuonTree_Zmumu,Zmumu_eta,Zmumu_phi,0.0,0.4,[nmin,nmax],100)
 data2=ak.flatten(res)
 
 colors=["#0072B2", "#FD0000"]

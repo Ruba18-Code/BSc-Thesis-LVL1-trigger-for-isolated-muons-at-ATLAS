@@ -829,10 +829,6 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
         TPR = Zmumu_cumulative_counts / np.sum(Zmumu_counts)
         FPR = ZeroBias_cumulative_counts / np.sum(ZeroBias_counts)
 
-        #Add the first point to the ROC curve, (0,0)
-        TPR=np.concatenate(([0],TPR))
-        FPR=np.concatenate(([0],FPR))
-
         #Append the ROC curve to the list
         ROC_curve.append([FPR, TPR])
 
@@ -969,6 +965,24 @@ def ROC_curve_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, 
         guess=new_guess
 
     return(current_mean, current_guess)
+
+def ROC_curve_efficiency_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                                    Zmumu_range, ZeroBias_range, bins, dr_min, dr_max):
+    min_FPR=np.inf
+    for i in range(len(dr_min)):
+        res, _, _=compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                    Zmumu_range, ZeroBias_range, bins, [dr_min[i]], [dr_max[i]])
+        FPR=res[0][0]
+        TPR=res[0][1]
+        FPR_90=FPR[TPR >= 0.9]
+        if min(FPR_90) < min_FPR:
+            min_FPR=min(FPR_90)
+            best_dr=[dr_min[i], dr_max[i]]
+        else:
+            continue
+    
+    print(f"The best [min_dr,max_dr] range is: {np.round(best_dr,4)} \n with an FPR of {np.round(min_FPR,2)} for a TPR of at least 90%")
+    return(best_dr, min_FPR)
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """
