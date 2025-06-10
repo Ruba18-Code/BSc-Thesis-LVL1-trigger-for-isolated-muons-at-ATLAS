@@ -353,8 +353,9 @@ def get_all_Z_peak_pairs(pt_events, eta_events, phi_events):
                 
                 # Make sure none of these are None or empty
                 if (pt_pair is not None and eta_pair is not None and phi_pair is not None):
-
-                    pt.append(pt_pair), eta.append(eta_pair), phi.append(phi_pair)
+                    pt.append(pt_pair)
+                    eta.append(eta_pair)
+                    phi.append(phi_pair)
                     
                     continue  # continue to next event
         # If we got here, something was missing or None - append empty array
@@ -767,23 +768,26 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
     else:
         return res
     
-
 #####################################################################################################################################3
 
-def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, e_cut=14*10**3):
+def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max):
 
     """
     This function plots the ROC curve for a given delta r range.
 
     Inputs:
-        MuonTree_Zmumu: tree containing the Z->mu mu data
-        MuonTree_ZeroBias: tree containing the ZeroBias data
+        MuonTree_Zmumu: tree containing the Z->mu mu data (this feels unnecessary but to avoid it I'd have to update the 
+        muon_isolation_all_events function)
+        MuonTree_ZeroBias: tree containing the ZeroBias data (this feels unnecessary but to avoid it I'd have to update the 
+        muon_isolation_all_events function)
+        Zmumu_pt, Zmumu_eta, Zmumu_phi: pt, eta and phi of the Z->mu mu data
+        ZeroBias_pt, ZeroBias_eta, ZeroBias_phi: pt, eta and phi of the ZeroBias data
         Zmumu_range: range of the Z->mu mu data
         ZeroBias_range: range of the ZeroBias data
         bins: bins for the histogram
         dr_min: minimum delta r
         dr_max: maximum delta r
-        e_cut: energy cut
 
     Returns:
         Plot of the ROC curve
@@ -792,17 +796,6 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_range,ZeroBias_range
     #Unpack the ranges
     nmin1, nmax1 = Zmumu_range
     nmin2, nmax2 = ZeroBias_range
-
-    #Get the data from trees
-    #Z->mu mu
-    Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
-    Zmumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
-    Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
-
-    #ZeroBias
-    ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array(), e_cut)[nmin2:nmax2]
-    ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array(), e_cut)[nmin2:nmax2]
-    ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array(), e_cut)[nmin2:nmax2]
 
     #Flatten the arrays (to divide later)
     Zmumu_pt=ak.flatten(Zmumu_pt)
