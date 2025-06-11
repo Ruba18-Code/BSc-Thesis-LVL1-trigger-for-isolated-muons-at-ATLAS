@@ -71,7 +71,7 @@ def f(lower_dr,upper_dr,ax):
 
     #Plot the data
     coolplot([Z_mumu_data,ZeroBias_data],
-                np.linspace(0,5,20),
+                np.linspace(0,5,30),
                 colors,labels,
                 "Isolation / Transverse energy","Counts",
             fr"$\Delta R$= [{np.round(lower_dr,2)},{np.round(upper_dr,2)}]",

@@ -97,7 +97,7 @@ def f(i,ax):
 
         #Plot the data
         coolplot([ratio1,ratio2],
-                        np.linspace(0,6,20),
+                        np.linspace(0,6,50),
                         colors,labels,
                         "Isolation / Transverse energy","Counts",
                 "ANY quality case",
@@ -110,7 +110,7 @@ def f(i,ax):
 
         #Plot the data
         coolplot([ratio3,ratio4],
-                        np.linspace(0,6,20),
+                        np.linspace(0,6,50),
                         colors,labels,
                         "Isolation / Transverse energy","Counts",
                 "Quality 0 case",

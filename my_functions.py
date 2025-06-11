@@ -872,7 +872,9 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
     plt.title(fr"ROC Curve - Comparing different $\Delta R$ ranges")
     plt.legend(legend, loc='lower right') #loc='lower right' is used to avoid the legend to overlap with the plot
     plt.tight_layout() 
-    plt.plot([0,1],[0,1], linestyle="--", color="black")
+    plt.plot([0,1],[0,1], linestyle='--', color="black")
+    plt.plot([0,1],[0.9,0.9], linestyle="--", color="red")
+    plt.plot([0.7647,0.7647],[0,1], linestyle="--", color="red")
     plt.show()
 
     return ROC_curve
@@ -967,7 +969,28 @@ def ROC_curve_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, 
     return(current_mean, current_guess)
 
 def ROC_curve_efficiency_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                                    Zmumu_range, ZeroBias_range, bins, dr_min, dr_max):
+                                    Zmumu_range, ZeroBias_range, bins, dr_min, dr_max, print_best=False):
+    
+    """
+    This function aims to optimise the delta R parameters so I get the 'best' ROC curve. 
+    I introduce a list of delta R ranges and the function will return the range that minimises the FPR for a TPR of at least 90%.
+
+    Inputs:
+    - MuonTree_Zmumu: tree containing the Z->mu mu data
+    - MuonTree_ZeroBias: tree containing the ZeroBias data
+    - Zmumu_pt, Zmumu_eta, Zmumu_phi: pt, eta and phi of the Z->mu mu data
+    - ZeroBias_pt, ZeroBias_eta, ZeroBias_phi: pt, eta and phi of the ZeroBias data
+    - Zmumu_range: range of the Z->mu mu data
+    - ZeroBias_range: range of the ZeroBias data
+    - bins: bins for the ROC curve computation
+    - dr_min: list of minimum delta R
+    - dr_max: list of maximum delta R
+    - print_best: boolean that indicates if the best range should be printed
+
+    Returns:
+    - best_dr: best delta R range
+    - min_FPR: minimum FPR for a TPR of at least 90%
+    """
     min_FPR=np.inf
     for i in range(len(dr_min)):
         res, _, _=compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
@@ -981,7 +1004,9 @@ def ROC_curve_efficiency_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, 
         else:
             continue
     
-    print(f"The best [min_dr,max_dr] range is: {np.round(best_dr,4)} \n with an FPR of {np.round(min_FPR,2)} for a TPR of at least 90%")
+    #Print the best range if print_best is True
+    if print_best==True:
+        print(f"The best [min_dr,max_dr] range is: {np.round(best_dr,4)} \n with an FPR of {np.round(min_FPR,2)} for a TPR of at least 90%")
     return(best_dr, min_FPR)
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
@@ -1016,4 +1041,45 @@ def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
         print(f"energy_cut: Only {np.round(len(muon_array)/len(energy_array)*100,2)}% of the events have survived the cut",
               f"with a lower cut of {lower_cut} and an upper cut of {upper_cut}")
     return muon_array
+
+############################################################################################################
+def generate_random_float_pairs(min_val, max_val, n, min_diff=0.2):
+    """
+    This function generates random float pairs between min_val and max_val, with a minimum difference between the pairs.
+
+    Inputs:
+        min_val: minimum value for the pairs
+        max_val: maximum value for the pairs
+        n: number of pairs to generate
+        min_diff: minimum difference between the pairs
+
+    Returns:
+        final_mins: array of minimum values
+        final_maxs: array of maximum values
+    """
+    #Initialize the variables
+    pairs_generated = 0
+    mins_list = []
+    maxs_list = []
+
+    #Loop until the number of pairs is reached
+    while pairs_generated < n:
+        # Generate more than needed to ensure enough valid pairs
+        a = np.random.uniform(min_val, max_val - min_diff, size=(n - pairs_generated) * 2)
+        b = np.random.uniform(a + min_diff, max_val, size=a.shape)
+
+        # Ensure a < b
+        mins = np.minimum(a, b)
+        maxs = np.maximum(a, b)
+
+        # Accumulate valid pairs
+        mins_list.append(mins[:n - pairs_generated])
+        maxs_list.append(maxs[:n - pairs_generated])
+        pairs_generated += len(mins[:n - pairs_generated])
+
+    # Combine into final arrays
+    final_mins = np.concatenate(mins_list)[:n]
+    final_maxs = np.concatenate(maxs_list)[:n]
+    
+    return final_mins, final_maxs
 # %%
