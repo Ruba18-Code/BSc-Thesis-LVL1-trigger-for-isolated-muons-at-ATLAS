@@ -23,7 +23,7 @@ ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias[
 # %%
 dr_min = np.linspace(0, 0, 3)
 dr_max = np.linspace(0.2, 2, 3)
-bins = np.linspace(0, 8, 200)
+bins = np.linspace(0, 2, 200)
 
 plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
                 ZeroBias_phi, [nmin1,nmax1],[nmin2,nmax2],bins,dr_min,dr_max,)
@@ -31,7 +31,7 @@ plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi
 # %%
 dr_min = np.linspace(0, 0, 3)
 dr_max = np.linspace(0.2, 1, 3)
-bins = np.linspace(0, 8, 200)
+bins = np.linspace(0, 2, 200)
 
 plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
                 ZeroBias_phi, [nmin1,nmax1],[nmin2,nmax2],bins,dr_min,dr_max,)
@@ -39,7 +39,7 @@ plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi
 # %%
 dr_min = np.linspace(0, 0, 3)
 dr_max = np.linspace(0.2, 0.5, 3)
-bins = np.linspace(0, 8, 200)
+bins = np.linspace(0, 2, 200)
 
 plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
                 ZeroBias_phi, [nmin1,nmax1],[nmin2,nmax2],bins,dr_min,dr_max,)
@@ -47,7 +47,7 @@ plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi
 # %%
 dr_min = np.linspace(0, 0.3, 3)
 dr_max = np.linspace(0.5, 0.5, 3)
-bins = np.linspace(0, 8, 200)
+bins = np.linspace(0, 2, 200)
 
 plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
                 ZeroBias_phi, [nmin1,nmax1],[nmin2,nmax2],bins,dr_min,dr_max,)

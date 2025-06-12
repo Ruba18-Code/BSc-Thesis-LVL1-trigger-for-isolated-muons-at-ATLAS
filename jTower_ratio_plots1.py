@@ -13,10 +13,10 @@ dr_min=0.0
 dr_max=0.4
 
 nmin1=0
-nmax1=1000
+nmax1=2000
 
 nmin2=0
-nmax2=1000
+nmax2=2000
 
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
 ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
@@ -35,7 +35,7 @@ eta_events=MuonTree_Zmumu["muon_eta"].array()[nmin1:nmax1]
 phi_events=MuonTree_Zmumu["muon_phi"].array()[nmin1:nmax1]
 
 data1=ak.flatten(pt_events)
-isolation =muon_isolation_all_events(MuonTree_Zmumu, eta_events, phi_events, dr_min, dr_max, [nmin1,nmax1], 300)
+isolation =muon_isolation_all_events(MuonTree_Zmumu, eta_events, phi_events, dr_min, dr_max, [nmin1,nmax1], 1000)
 data2=ak.flatten(isolation)
 
 ratio1=data2/data1
@@ -67,7 +67,7 @@ eta_events=quality_selector(MuonTree_Zmumu["muon_quality"].array(), MuonTree_Zmu
 phi_events=quality_selector(MuonTree_Zmumu["muon_quality"].array(), MuonTree_Zmumu["muon_phi"].array(), 0)[nmin1:nmax1]
 
 data1=ak.flatten(pt_events)
-isolation =muon_isolation_all_events(MuonTree_Zmumu, eta_events, phi_events, dr_min, dr_max, [nmin1,nmax1], 300)
+isolation =muon_isolation_all_events(MuonTree_Zmumu, eta_events, phi_events, dr_min, dr_max, [nmin1,nmax1], 1000)
 data2=ak.flatten(isolation)
 
 ratio3=data2/data1
@@ -97,7 +97,7 @@ def f(i,ax):
 
         #Plot the data
         coolplot([ratio1,ratio2],
-                        np.linspace(0,6,50),
+                        np.linspace(0,0.5,40),
                         colors,labels,
                         "Isolation / Transverse energy","Counts",
                 "ANY quality case",
@@ -110,7 +110,7 @@ def f(i,ax):
 
         #Plot the data
         coolplot([ratio3,ratio4],
-                        np.linspace(0,6,50),
+                        np.linspace(0,0.5,40),
                         colors,labels,
                         "Isolation / Transverse energy","Counts",
                 "Quality 0 case",
@@ -152,7 +152,7 @@ ratio1=data2/data1
 not_empty_count1 = ak.sum(ak.num(pt_events) > 0)
 
 nmin2=0
-nmax2=5000
+nmax2=1000
 pt_events=MuonTree_ZeroBias["LVL1Muon_et"].array()[nmin2:nmax2]
 eta_events=MuonTree_ZeroBias["LVL1Muon_eta"].array()[nmin2:nmax2]
 phi_events=MuonTree_ZeroBias["LVL1Muon_phi"].array()[nmin2:nmax2]
@@ -167,7 +167,7 @@ ratio2=data2/data1
 not_empty_count2 = ak.sum(ak.num(pt_events) > 0)
 
 # %%
-coolplot([ratio1, ratio2], np.linspace(-0.2,6,20),["#0072B2","#FD0000"],[fr"Z $\longrightarrow \mu \mu$ (LVL1 data),events={not_empty_count1}" ,fr"Zero Bias (LVL1 data), events={not_empty_count2}"],
+coolplot([ratio1, ratio2], np.linspace(-0.2,1,40),["#0072B2","#FD0000"],[fr"Z $\longrightarrow \mu \mu$ (LVL1 data),events={not_empty_count1}" ,fr"Zero Bias (LVL1 data), events={not_empty_count2}"],
         "Isolation / Transverse energy","Counts",
         fr"$\left(\frac{{E_{{t,\;iso}}}}{{E_t}}\right)$ ratio histogram, $\Delta R$ = [{dr_min}, {dr_max}]")
 

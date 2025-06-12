@@ -632,15 +632,72 @@ def dr_threshold_boolean_mask_event(event_dr,lower_threshold,upper_threshold):
     """
     event_dr = np.array(event_dr)  # ensures it's a NumPy array
     return (lower_threshold**2 < event_dr) & (event_dr < upper_threshold**2)
+
+def jTower_assign_cuts(tree):
+
+    """
+    This function assigns different energy cuts to the jTower energies based on the eta values. Each eta bin has a different cut value.
+    Also, depending on the calosource, the cut value is different. For even values of calosource, the cuts are defined by EM_cuts, for odd values,
+    the cuts are defined by HAD_cuts. The units are MeV.
+
+    Inputs:
+        -tree: the tree to get eta and calosource values from (MuonTree_ZeroBias or MuonTree_Zmumu)
+
+    Returns:
+        -result: array containing the cut energy value for each jTower.
+
+    IMPORTANT NOTE: when getting the jTower list, I choose only the first entry because all the entries are the same (same for all events).
+    This way I can save time and memory, hopefully, but if this is not the case, it won't work.
+    """
+    #Get the jTower eta values, I can choose only the first entry because all the entries are the same (same for all events)
+    jTower = tree.arrays(["jTower_eta","jTower_calosource"],entry_start=0,entry_stop=1)
+    jTower_eta=ak.to_numpy(jTower["jTower_eta"])
+    jTower_calosource=ak.to_numpy(jTower["jTower_calosource"])
+
+    #Make a boolean mask with True for EM calosource and False for HAD calosource
+    jTower_calosource= (jTower_calosource%2==0)
+
+    #These are the predefined arrays:.2, 1.3, 1.4, 1.5,
+    #       1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 2.9, 3.1, 3.2], 
+
+    #eta_bins=np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5,
+    #       1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 2.9, 3.1, 3.2], dtype=np.float32)
+
+    eta_intervals=([0,0.1],[0.1,0.2],[0.2,0.3],[0.3,0.4],[0.4,0.5],[0.5,0.6],[0.6,0.7],[0.7,0.8],[0.8,0.9],[0.9,1],
+                    [1,1.1],[1.1,1.2],[1.2,1.3],[1.3,1.4],[1.4,1.5],[1.5,1.6],[1.6,1.7],[1.7,1.8],[1.8,1.9],[1.9,2],
+                    [2,2.1],[2.1,2.2],[2.2,2.3],[2.3,2.4],[2.4,2.5],[2.5,2.7],[2.7,2.9],[2.9,3.1],[3.1,3.2])
     
+    EM_cuts=np.array([1150, 1150, 1200, 1150, 1100, 1100, 1050, 1050, 1000, 1000, 950, 950, 900, 850, 1300, 1150,
+                       1050, 1000, 1050, 950, 950, 900, 850, 900, 800, 2150, 2000, 1800, 1100], dtype=np.float32)
+
+    HAD_cuts=np.array([0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,500 ,950 ,850 ,700 ,750 ,700 ,650 ,650, 600,
+                       550 ,1300 ,1250 ,1150 ,350], dtype=np.float32)
+    
+    #Initialize the result array with nan values and same shape as jTower_eta
+    result = np.full(jTower_eta.shape, np.nan)
+
+    #Loop over the eta intervals (start, end) and assign the cuts
+    for i, (start, end) in enumerate(eta_intervals):
+        mask = (np.abs(jTower_eta) >= start) & (np.abs(jTower_eta) < end)
+        result[mask & jTower_calosource] = EM_cuts[i]
+        result[mask & ~jTower_calosource] = HAD_cuts[i]
+
+    # Handle values of eta above the max eta bin (3.2) assigning the last cut value to them (1100 for EM, 350 for HAD)
+    _ , last_end = eta_intervals[-1]
+    out_of_bounds_mask = jTower_eta >= last_end
+    result[out_of_bounds_mask & jTower_calosource] = EM_cuts[-1]
+    result[out_of_bounds_mask & ~jTower_calosource] = HAD_cuts[-1]
+
+    return ak.Array(result)
+
 def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, jTower_phi_event, jTower_et_event,
-                             lower_threshold,upper_threshold, get_mask):
+                             lower_threshold,upper_threshold, jTower_cuts, get_mask):
 
     """
     Inputs:
-        -Array containing the values of LVL1 muon pseudorapidity for an event (muon_eta_event)
-        -Array containing the values of LVL1 muon phi for an event (muon_phi_event)
-        -Array containing the values of LVL1 muon transverse energy in MeV for an event (muon_et_event)
+        -Array containing the values of muon pseudorapidity for an event (muon_eta_event)
+        -Array containing the values of muon phi for an event (muon_phi_event)
+        -Array containing the values of muon transverse energy in MeV for an event (muon_et_event)
 
         -Array containing the values of jTower pseudorapidity for an event (jTower_eta_event)
         -Array containing the values of jTower phi for an event (jTower_phi_event)
@@ -658,16 +715,25 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
 
     isolated_energy_event=[]
     masks=[]
+
+    #Take the jTowers with negative energy out (they appear due to technical features of the detector)
+    mask= jTower_et_event > jTower_cuts
+    mask=ak.flatten(mask)
+    jTower_et_event=jTower_et_event[mask]
+    jTower_eta_event=jTower_eta_event[mask]
+    jTower_phi_event=jTower_phi_event[mask]
+
+    #Check if the mask caused the jTower_(et,eta,phi)_event to be empty (if so, append NaN)
+    if len(jTower_et_event) == 0:
+        isolated_energy_event.append(np.nan)
+        return isolated_energy_event, masks
+    
     for (eta, phi) in zip(muon_eta_event, muon_phi_event):
         #Generate pairs of [muon,jTower1],[muon,jTower2]...
         #That's an array where the left column is the value of a muon (always the same) and the right column contains all the jTower values
         #associated with such muon
 
-        #Take the jTowers with negative energy out (they appear due to technical features of the detector)
-        mask=jTower_et_event > 0
-        jTower_et_event=jTower_et_event[mask]
-        jTower_eta_event=jTower_eta_event[mask]
-        jTower_phi_event=jTower_phi_event[mask]
+
 
         #Create pairs of [muon,jTower1],[muon,jTower2]...
         jTower_muon_eta_pairs=[(eta, stuff) for stuff in jTower_eta_event]
@@ -695,7 +761,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
     #if get_mask is True, return the result and the mask, otherwise just the result
     return isolated_energy_event, masks
 
-def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size, get_mask=False):
+def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size=10000, get_mask=False):
     """
     This function computes muon isolation for all events in batches of a certain size to avoid crashing the computer.
     
@@ -709,6 +775,8 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
     Returns:
         List of isolated muon energies per event
     """
+    #First compute the cuts for the jTower energies
+    jTower_cuts=jTower_assign_cuts(tree)
 
     start_event, end_event = event_range
     res = []
@@ -756,7 +824,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
                 isol_event, mask = muon_isolation_one_event(
                     muon_eta_event, muon_phi_event,
                     jTower_eta_event, jTower_phi_event, jTower_et_event,
-                    lower_threshold,upper_threshold, get_mask)
+                    lower_threshold,upper_threshold,jTower_cuts,get_mask)
                 #and append it to the result
                 res.append(isol_event)
                 #if get_mask is True, append the mask to the result
@@ -874,7 +942,6 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
     plt.tight_layout() 
     plt.plot([0,1],[0,1], linestyle='--', color="black")
     plt.plot([0,1],[0.9,0.9], linestyle="--", color="red")
-    plt.plot([0.7647,0.7647],[0,1], linestyle="--", color="red")
     plt.show()
 
     return ROC_curve
@@ -902,6 +969,10 @@ def ROC_curve_distance(ROC_curve):
 def ROC_curve_comparer(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
                 ZeroBias_phi, Zmumu_range, ZeroBias_range, bins, guess=[0.0,1.0], mean_distance=np.inf):
     """
+    ------------------------------------------------------------------------------------------------
+    IMPORTANT NOTE: UNUSED FUNCTION, I'M USING THE 'ROC_curve_optimiser' FUNCTION INSTEAD
+    ------------------------------------------------------------------------------------------------
+
     This function aims to optimise the delta R parameters so I get the 'best' ROC curve. A good estimator is to 
     minimise the distance between the curve and the top left corner. To do so, I can compute the distance for all points
     and try to minimise it by adding small variations to an initial guess of delta R.
@@ -944,6 +1015,12 @@ def ROC_curve_comparer(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
 
 def ROC_curve_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
                 ZeroBias_phi, Zmumu_range, ZeroBias_range, bins, iterations=3, guess=[0.0,1.0]):
+    
+    """
+    ------------------------------------------------------------------------------------------------
+    IMPORTANT NOTE: UNUSED FUNCTION, I'M USING THE 'ROC_curve_optimiser' FUNCTION INSTEAD
+    ------------------------------------------------------------------------------------------------
+    """
     
     current_mean=np.inf
     bins=np.linspace(0,1,5000)
@@ -1008,6 +1085,50 @@ def ROC_curve_efficiency_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, 
     if print_best==True:
         print(f"The best [min_dr,max_dr] range is: {np.round(best_dr,4)} \n with an FPR of {np.round(min_FPR,2)} for a TPR of at least 90%")
     return(best_dr, min_FPR)
+
+def optimise_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                        Zmumu_range, ZeroBias_range, bins, iterations):
+    
+    """
+    This function aims to optimise the ROC curve by finding the best delta R range.
+    It's just a quick way to run the 'ROC_curve_efficiency_optimiser' function multiple times.
+
+    Inputs:
+        -MuonTree_Zmumu: the Z->mumu tree
+        -MuonTree_ZeroBias: the ZeroBias tree
+        -Zmumu_pt: the Z->mumu transverse momentum
+        -Zmumu_eta: the Z->mumu pseudorapidity
+        -Zmumu_phi: the Z->mumu phi
+        -ZeroBias_pt: the ZeroBias transverse momentum
+        -ZeroBias_eta: the ZeroBias pseudorapidity
+        -ZeroBias_phi: the ZeroBias phi
+        -Zmumu_range: the range of the Z->mumu events
+        -ZeroBias_range: the range of the ZeroBias events
+        -bins: the bins of the ROC curve
+        -iterations: the number of iterations
+
+    Returns:
+        -best_dr: the best delta R range
+        -min_FPR: the minimum FPR value
+    """
+    dr_list=[]
+    FPR_list=[]
+
+    i=int(np.sqrt(iterations))
+    j=int(np.sqrt(iterations))
+    for val in tqdm(range(i)):
+        mins, maxs = generate_random_float_pairs(0.0, 0.8, j, min_diff=0.2)
+        dr_min=mins
+        dr_max=maxs
+
+        dr, FPR_value =ROC_curve_efficiency_optimiser(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                                    Zmumu_range, ZeroBias_range, bins, dr_min, dr_max)
+        dr_list.append(dr)
+        FPR_list.append(FPR_value)
+
+    min_FPR=min(FPR_list)
+    best_dr=dr_list[FPR_list.index(min_FPR)]
+    print(f"After", i*j ,f"iterations, the best delta R range is: {best_dr} with an FPR of {min_FPR}")
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """

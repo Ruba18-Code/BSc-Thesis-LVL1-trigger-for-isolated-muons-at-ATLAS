@@ -58,7 +58,7 @@ def f(lower_dr,upper_dr,ax):
     plt.sca(ax)
 
     #Compute the isolation and prepare it for plotting 
-    Z_mumu_res=muon_isolation_all_events(MuonTree_ZeroBias,Z_mumu_eta,Z_mumu_phi,lower_dr,upper_dr,[Z_mumu_nmin1,Z_mumu_nmax1],100)
+    Z_mumu_res=muon_isolation_all_events(MuonTree_ZeroBias,Z_mumu_eta,Z_mumu_phi,lower_dr,upper_dr,[Z_mumu_nmin1,Z_mumu_nmax1],1000)
     Z_mumu_data=ak.flatten(Z_mumu_res)/ak.flatten(Z_mumu_pt)
 
     ZeroBias_res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,lower_dr,upper_dr,[ZeroBias_nmin1,ZeroBias_nmax1],1000)
@@ -71,7 +71,7 @@ def f(lower_dr,upper_dr,ax):
 
     #Plot the data
     coolplot([Z_mumu_data,ZeroBias_data],
-                np.linspace(0,5,30),
+                np.linspace(0,0.5,30),
                 colors,labels,
                 "Isolation / Transverse energy","Counts",
             fr"$\Delta R$= [{np.round(lower_dr,2)},{np.round(upper_dr,2)}]",

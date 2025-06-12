@@ -40,7 +40,7 @@ ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["
 non_empty_count1 = ak.sum(ak.num(ZeroBias_eta[nmin1:nmax1]) > 0)
 
 #Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin1,nmax1],500)
+res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin1,nmax1],1000)
 data1=ak.flatten(res)
 
 #Assign eta and phi variables Z mu mu
@@ -52,7 +52,7 @@ nmax2=1000
 non_empty_count2 = ak.sum(ak.num(muon_eta_all[nmin2:nmax2]) > 0)
 
 #Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_Zmumu,muon_eta_all,muon_phi_all,0.0,0.4,[nmin2,nmax2],100)
+res=muon_isolation_all_events(MuonTree_Zmumu,muon_eta_all,muon_phi_all,0.0,0.4,[nmin2,nmax2],1000)
 data2=ak.flatten(res)
 
 
@@ -72,7 +72,7 @@ ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["
 non_empty_count3 = ak.sum(ak.num(muon_eta_all[nmin3:nmax3]) > 0)
 
 #Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin3,nmax3],500)
+res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin3,nmax3],1000)
 data3=ak.flatten(res)
 
 #Assign eta and phi variables Z mu mu
@@ -84,7 +84,7 @@ nmax4=1000
 non_empty_count4 = ak.sum(ak.num(muon_eta_all[nmin4:nmax4]) > 0)
 
 #Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_Zmumu,muon_eta_all,muon_phi_all,0.0,0.4,[nmin4,nmax4],100)
+res=muon_isolation_all_events(MuonTree_Zmumu,muon_eta_all,muon_phi_all,0.0,0.4,[nmin4,nmax4],1000)
 data4=ak.flatten(res)
 
 """
@@ -135,49 +135,5 @@ def f_subplots():
     plt.show()
 
 f_subplots()
-"""
-LVL1 MUON PLOTS
-"""
 
-"""
-Z -> mu mu vs Zero Bias LVL1 
-"""
-
-#Assign eta and phi variables Zero Bias
-nmin1=0
-nmax1=1000
-
-ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin1:nmax1]
-ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin1:nmax1]
-ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin1:nmax1]
-
-
-#Check how many events are not empty
-non_empty_count1 = ak.sum(ak.num(ZeroBias_eta[nmin1:nmax1]) > 0)
-
-#Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,0.0,0.4,[nmin1,nmax1],500)
-data1=ak.flatten(res)
-
-#Assign eta and phi variables Z mu mu
-muon_eta_all=MuonTree_Zmumu["LVL1Muon_eta"].array()
-muon_phi_all=MuonTree_Zmumu["LVL1Muon_phi"].array()
-nmin2=0
-nmax2=1000
-#Check how many events are not empty
-non_empty_count2 = ak.sum(ak.num(muon_eta_all[nmin2:nmax2]) > 0)
-
-#Compute the isolation and prepare it for plotting 
-res=muon_isolation_all_events(MuonTree_Zmumu,muon_eta_all,muon_phi_all,0.0,0.4,[nmin2,nmax2],100)
-data2=ak.flatten(res)
-
-#Perform the plot
-colors=["#0072B2", "#FD0000"]
-labels=[fr"Zero Bias LVL1 muons, events={non_empty_count1}",
-        fr"Z $\longrightarrow \mu \mu$ LVL1 muons, events={non_empty_count2}"]
-
-coolplot([data1,data2],np.linspace(0,30000,25),colors,labels,"Isolation (MeV)","Counts",
-         r"Isolation histogram muons - LVL1 data - $\Delta R$ threshold $=$ [0,0.4]")
-
-print("The mean values are:\n 1.Zero Bias:", int(ak.mean(data1)), "MeV \n" r" 2.Z->μμ:", int(ak.mean(data2)), "MeV\n")
 
