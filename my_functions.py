@@ -633,7 +633,7 @@ def dr_threshold_boolean_mask_event(event_dr,lower_threshold,upper_threshold):
     event_dr = np.array(event_dr)  # ensures it's a NumPy array
     return (lower_threshold**2 < event_dr) & (event_dr < upper_threshold**2)
 
-def jTower_assign_cuts(tree):
+def jTower_assign_cuts(tree, start=0, stop=1):
 
     """
     This function assigns different energy cuts to the jTower energies based on the eta values. Each eta bin has a different cut value.
@@ -650,7 +650,7 @@ def jTower_assign_cuts(tree):
     This way I can save time and memory, hopefully, but if this is not the case, it won't work.
     """
     #Get the jTower eta values, I can choose only the first entry because all the entries are the same (same for all events)
-    jTower = tree.arrays(["jTower_eta","jTower_calosource"],entry_start=0,entry_stop=1)
+    jTower = tree.arrays(["jTower_eta","jTower_calosource"],entry_start=start,entry_stop=stop)
     jTower_eta=ak.to_numpy(jTower["jTower_eta"])
     jTower_calosource=ak.to_numpy(jTower["jTower_calosource"])
 
@@ -661,7 +661,7 @@ def jTower_assign_cuts(tree):
     #       1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 2.9, 3.1, 3.2], 
 
     #eta_bins=np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5,
-    #       1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 2.9, 3.1, 3.2], dtype=np.float32)
+     #     1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 2.9, 3.1, 3.2], dtype=np.float32)
 
     eta_intervals=([0,0.1],[0.1,0.2],[0.2,0.3],[0.3,0.4],[0.4,0.5],[0.5,0.6],[0.6,0.7],[0.7,0.8],[0.8,0.9],[0.9,1],
                     [1,1.1],[1.1,1.2],[1.2,1.3],[1.3,1.4],[1.4,1.5],[1.5,1.6],[1.6,1.7],[1.7,1.8],[1.8,1.9],[1.9,2],
@@ -718,7 +718,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
 
     #Take the jTowers with negative energy out (they appear due to technical features of the detector)
     mask= jTower_et_event > jTower_cuts
-    mask=ak.flatten(mask)
+
     jTower_et_event=jTower_et_event[mask]
     jTower_eta_event=jTower_eta_event[mask]
     jTower_phi_event=jTower_phi_event[mask]
@@ -732,8 +732,6 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
         #Generate pairs of [muon,jTower1],[muon,jTower2]...
         #That's an array where the left column is the value of a muon (always the same) and the right column contains all the jTower values
         #associated with such muon
-
-
 
         #Create pairs of [muon,jTower1],[muon,jTower2]...
         jTower_muon_eta_pairs=[(eta, stuff) for stuff in jTower_eta_event]
@@ -761,6 +759,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
     #if get_mask is True, return the result and the mask, otherwise just the result
     return isolated_energy_event, masks
 
+
 def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size=10000, get_mask=False):
     """
     This function computes muon isolation for all events in batches of a certain size to avoid crashing the computer.
@@ -776,7 +775,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
         List of isolated muon energies per event
     """
     #First compute the cuts for the jTower energies
-    jTower_cuts=jTower_assign_cuts(tree)
+    jTower_cuts=ak.flatten(jTower_assign_cuts(tree))
 
     start_event, end_event = event_range
     res = []
@@ -821,7 +820,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
                 jTower_phi_event = jTower_phi_batch[i]
                 jTower_et_event  = jTower_et_batch[i]
 
-                isol_event, mask = muon_isolation_one_event(
+                isol_event, mask= muon_isolation_one_event(
                     muon_eta_event, muon_phi_event,
                     jTower_eta_event, jTower_phi_event, jTower_et_event,
                     lower_threshold,upper_threshold,jTower_cuts,get_mask)
@@ -1129,6 +1128,8 @@ def optimise_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
     min_FPR=min(FPR_list)
     best_dr=dr_list[FPR_list.index(min_FPR)]
     print(f"After", i*j ,f"iterations, the best delta R range is: {best_dr} with an FPR of {min_FPR}")
+
+    return best_dr, min_FPR
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """
