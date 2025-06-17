@@ -69,8 +69,8 @@ coolplot([ratio1,ratio2],np.linspace(0,0.6,40),colors,labels, "Isolation/et rati
 #Number of bins is the square root of the number of events 
 #The range starts at -1/sqrt(nmax-nmin), this ensures that the data starts at (0,0) even on extreme cases
 bins=np.linspace(0,1,5*int(np.sqrt(nmax-nmin)))
-dr_min=[0.2,0.3,0.1]
-dr_max=[0.8,0.6,0.4]
+dr_min=[0.2,0.3,0.1,0.04]
+dr_max=[0.8,0.6,0.4,0.26]
 
 #Prepare the data for the plots
 plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
