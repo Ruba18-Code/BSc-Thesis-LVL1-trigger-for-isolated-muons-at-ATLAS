@@ -760,7 +760,8 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
     return isolated_energy_event, masks
 
 
-def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size=10000, get_mask=False):
+def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size=10000, get_mask=False,
+                              scaling=1):
     """
     This function computes muon isolation for all events in batches of a certain size to avoid crashing the computer.
     
@@ -775,7 +776,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
         List of isolated muon energies per event
     """
     #First compute the cuts for the jTower energies
-    jTower_cuts=ak.flatten(jTower_assign_cuts(tree))
+    jTower_cuts=ak.flatten(jTower_assign_cuts(tree,scaling=scaling))
  
     start_event, end_event = event_range
     res = []
