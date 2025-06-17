@@ -1,10 +1,6 @@
-# %%
-import my_functions
-import uproot
-import numpy as np #math and science package
-import scipy as sp #math and science package
-import awkward as ak #root files are usuallt awkward arrays 
-import matplotlib.pyplot as plt #plot stuff
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from my_functions import*
 
 # %%

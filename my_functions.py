@@ -633,7 +633,7 @@ def dr_threshold_boolean_mask_event(event_dr,lower_threshold,upper_threshold):
     event_dr = np.array(event_dr)  # ensures it's a NumPy array
     return (lower_threshold**2 < event_dr) & (event_dr < upper_threshold**2)
 
-def jTower_assign_cuts(tree, start=0, stop=1):
+def jTower_assign_cuts(tree, start=0, stop=1, scaling=1):
 
     """
     This function assigns different energy cuts to the jTower energies based on the eta values. Each eta bin has a different cut value.
@@ -667,10 +667,10 @@ def jTower_assign_cuts(tree, start=0, stop=1):
                     [1,1.1],[1.1,1.2],[1.2,1.3],[1.3,1.4],[1.4,1.5],[1.5,1.6],[1.6,1.7],[1.7,1.8],[1.8,1.9],[1.9,2],
                     [2,2.1],[2.1,2.2],[2.2,2.3],[2.3,2.4],[2.4,2.5],[2.5,2.7],[2.7,2.9],[2.9,3.1],[3.1,3.2])
     
-    EM_cuts=np.array([1150, 1150, 1200, 1150, 1100, 1100, 1050, 1050, 1000, 1000, 950, 950, 900, 850, 1300, 1150,
+    EM_cuts=np.array(scaling*[1150, 1150, 1200, 1150, 1100, 1100, 1050, 1050, 1000, 1000, 950, 950, 900, 850, 1300, 1150,
                        1050, 1000, 1050, 950, 950, 900, 850, 900, 800, 2150, 2000, 1800, 1100], dtype=np.float32)
 
-    HAD_cuts=np.array([0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,500 ,950 ,850 ,700 ,750 ,700 ,650 ,650, 600,
+    HAD_cuts=np.array(scaling*[0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,500 ,950 ,850 ,700 ,750 ,700 ,650 ,650, 600,
                        550 ,1300 ,1250 ,1150 ,350], dtype=np.float32)
     
     #Initialize the result array with nan values and same shape as jTower_eta
@@ -776,7 +776,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
     """
     #First compute the cuts for the jTower energies
     jTower_cuts=ak.flatten(jTower_assign_cuts(tree))
-
+ 
     start_event, end_event = event_range
     res = []
     masks=[]
