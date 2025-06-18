@@ -76,62 +76,69 @@ def histogram2errors(data1, data2, nbins, x_range, x_label, y_label, title_label
     plt.tight_layout()
     plt.show()
 
-def coolplot(data,bins,colors=['b','r','g'],labels=["data1","data2","data3"],x_label="xlabel",y_label="ylabel",title="hist", plot_show=True):
 
-    #This function is designed to create a comparative histogram of N sets of data with their respective errorbars included.
-    #Introduce a data vector, that contains one column for each dataset that has to be plotted data=[[set_a],[set_b],...]
-    #bins should be a linspace containing np.linspace(start:end, number_of_bins)
-    #colors is a vector of colors
-    #labels is a vector of labels for the legend
-    #x and y_label are NOT vectors: name of x and y axis
-    #same for title 
+def coolplot(data,bins,colors=["#0072B2", "#FD0000", 'g'],labels=["data1", "data2", "data3"],x_label="xlabel",y_label="ylabel",title="hist",
+             plot_show=True, ax=None):
+    """
+    This function is designed to create a comparative histogram of N sets of data with their respective errorbars included.
+    Introduce a data vector, that contains one column for each dataset that has to be plotted data=[[set_a],[set_b],...]
+    bins should be a linspace containing np.linspace(start:end, number_of_bins)
+    colors is a vector of colors
+    labels is a vector of labels for the legend
+    x and y_label are NOT vectors: name of x and y axis
+    same for title 
+    """
 
     #All outsider values will appear concentrated on the first and last bins
-    
-    bins_overflow = np.concatenate([[-np.inf],bins[1:-1],[np.inf]]) 
+    bins_overflow = np.concatenate([[-np.inf], bins[1:-1], [np.inf]]) 
 
-    #Create empty array
+    #Initialize lists
+    hists = []
+    error = []
 
-    hists=[]
-    error=[]
-    #Compute the histogram and error for every dataset
+    #Compute histograms
     for i in range(len(data)):
-        hists.append(np.histogram(ak.flatten(data[i], axis=None),bins=bins_overflow)[0])
+        hists.append(np.histogram(ak.flatten(data[i], axis=None), bins=bins_overflow)[0])
         error.append(np.sqrt(hists[i]))
 
-    #Plot according to some preferences
+    # If ax is None, get the current Axes object from plt (done to allow subplots)
+    axis = ax if ax is not None else plt.gca()
 
+    #Plot each set ot data
     for i in range(len(data)):
-        error[i]=error[i]/np.sum(hists[i])
-        hists[i]=hists[i]/np.sum(hists[i])
-
-        #Plot function
-        plt.step(
+        #Normalise
+        norm = np.sum(hists[i])
+        hists[i] = hists[i] / norm
+        error[i] = error[i] / norm
+        #Stepfunction
+        axis.step(
             bins[:-1],
             hists[i],
-            where='mid',  # or 'post', or 'pre' depending on visual preference
+            where='mid',
             color=colors[i],
             label=labels[i],
-            alpha=0.5)
-
-        #Plot errorbars
-        plt.errorbar(x=bins[:-1],
+            alpha=0.5
+        )
+        #Add errors
+        axis.errorbar(
+            x=bins[:-1],
             y=hists[i],
             yerr=error[i],
             color='black',
             fmt='o',
-            markersize=1)
-    
-    #cool parameters + plot the title and labels
-
+            markersize=1
+        )
+    #Set label, title and style
+    axis.set_xlabel(x_label)
+    axis.set_ylabel(y_label)
+    axis.set_title(title)
+    axis.legend()
+    axis.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.5)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
-    if plot_show:
+    #PLot if plot_show is True
+    if plot_show and ax is None:
         plt.show()
+
 
 #--------------------------------------------------------------------------------
 
