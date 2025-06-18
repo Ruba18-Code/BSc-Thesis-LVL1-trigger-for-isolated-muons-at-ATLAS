@@ -849,7 +849,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
     
 #####################################################################################################################################3
 def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max):
+                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=1):
     
     """
     This function computes the ROC curve for a given delta r range.
@@ -882,13 +882,13 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
     for i in tqdm(range(len(dr_min)), desc="Computing ROC curve", colour="green", leave=False):
         # Compute Z->mu mu isolation for a given dr_min and dr_max
         Zmumu_isolation = muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi,
-                                                    dr_min[i], dr_max[i], [nmin1, nmax1], 500)
+                                                    dr_min[i], dr_max[i], [nmin1, nmax1], 500, scaling=scaling)
         events_Zmumu.append(len(Zmumu_isolation))
         Zmumu_data = ak.flatten(Zmumu_isolation)
 
         #Compute ZeroBias isolation for a given dr_min and dr_max
         ZeroBias_isolation = muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi,
-                                                        dr_min[i], dr_max[i], [nmin2, nmax2], 500)
+                                                        dr_min[i], dr_max[i], [nmin2, nmax2], 500, scaling=scaling)
         events_ZeroBias.append(len(ZeroBias_isolation))
         ZeroBias_data = ak.flatten(ZeroBias_isolation)
 
@@ -914,7 +914,7 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
     return ROC_curve, events_Zmumu, events_ZeroBias
 
 def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max):
+                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=1):
 
     """
     This function plots the ROC curve for a given delta r range.
@@ -939,7 +939,7 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
 
     legend=[]
     ROC_curve, events_Zmumu, _=compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max)
+                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=scaling)
     #Loop over the different dr_min and dr_max
     for i in range(len(ROC_curve)):
         plt.plot(ROC_curve[i][0], ROC_curve[i][1], marker=".", label=fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
@@ -1142,6 +1142,68 @@ def optimise_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
     print(f"After", i*j ,f"iterations, the best delta R range is: {best_dr} with an FPR of {min_FPR}")
 
     return best_dr, min_FPR
+
+def ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias, Zmumu_pt,
+                            Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
+                            ZeroBias_phi, scaling_range: tuple=[0.5,2], amount_of_curves: int=4, dr_range: tuple=[0.05,0.3],
+                            event_range: tuple=[0, 2000], bin_range: tuple=[0,1], amount_of_bins: int=0):
+    """
+    This function plots and compares ROC curves for different scaling factors applied
+    to the noise cuts during the isolation.
+
+    Inputs:
+        - MuonTree_Zmumu: Z→μ⁺μ⁻ tree
+        - MuonTree_ZeroBias: ZeroBias tree
+        - Zmumu_pt: transverse momentum of Z→μ⁺μ⁻ events
+        - Zmumu_eta: pseudorapidity of Z→μ⁺μ⁻ events
+        - Zmumu_phi: φ angle of Z→μ⁺μ⁻ events
+        - ZeroBias_pt: transverse momentum of ZeroBias events
+        - ZeroBias_eta: pseudorapidity of ZeroBias events
+        - ZeroBias_phi: φ angle of ZeroBias events
+        - scaling_range: [min, max] scaling factors to apply to signal (default: [0.5, 2])
+        - amount_of_curves: number of ROC curves to generate for different scaling values (default: 4)
+        - dr_range: delta R range used in ROC curve computation (default: [0.05, 0.3])
+        - event_range: [min, max] indices of events to include from each dataset (default: [0, 2000])
+        - bin_range: [min, max] range of bin edges for the ROC histogram (default: [0, 1])
+        - amount_of_bins: number of bins to use (default: 5 * sqrt(N))
+
+    Returns:
+        - None; plots the ROC curves for different scaling values
+    """
+    dr_min, dr_max= dr_range
+    smin, smax = scaling_range
+    #Define scaling factors
+    scaling=np.linspace(smin,smax,amount_of_curves)
+    #Define bins
+    bmin, bmax= bin_range
+    nmin, nmax= event_range
+    if amount_of_bins == 0:
+        amount_of_bins=5*int(np.sqrt(nmax-nmin))
+        
+    bins=np.linspace(bmin,bmax,5*int(np.sqrt(nmax-nmin)))
+    #Initialize empty lists
+    c=[]
+    legend=[]
+    #Compute ROC curves for different scaling factors
+    for i in range(len(scaling)):
+        c.append(compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
+                    ZeroBias_phi, [nmin,nmax],[nmin,nmax],bins,[dr_min],[dr_max], scaling=scaling[i])[0])
+    #Plot each curve
+    for i, curve in enumerate(c):
+        plt.plot(curve[0][0],curve[0][1], marker=".")
+        legend.append(fr"scaling={scaling[i]}")
+    #Styling 
+    plt.grid(alpha=0.5, linestyle="--")
+    plt.xlabel("False Positive Rate (FPR)")
+    plt.ylabel("True Positive Rate (TPR)")
+    plt.title(fr"ROC Curve - Comparing scaling parameters, $\Delta R$ = [{dr_min},{dr_max}]")
+    plt.legend(legend,loc='lower right') #loc='lower right' is used to avoid the legend to overlap with the plot
+    plt.tight_layout() 
+    plt.plot([0,1],[0,1], linestyle='--', color="black")
+    plt.plot([0,1],[0.9,0.9], linestyle="--", color="red")
+    plt.show()
+
+    return()
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """
