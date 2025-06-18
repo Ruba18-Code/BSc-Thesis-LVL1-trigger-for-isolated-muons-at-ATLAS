@@ -674,10 +674,10 @@ def jTower_assign_cuts(tree, start=0, stop=1, scaling=1):
                     [1,1.1],[1.1,1.2],[1.2,1.3],[1.3,1.4],[1.4,1.5],[1.5,1.6],[1.6,1.7],[1.7,1.8],[1.8,1.9],[1.9,2],
                     [2,2.1],[2.1,2.2],[2.2,2.3],[2.3,2.4],[2.4,2.5],[2.5,2.7],[2.7,2.9],[2.9,3.1],[3.1,3.2])
     
-    EM_cuts=np.array(scaling*[1150, 1150, 1200, 1150, 1100, 1100, 1050, 1050, 1000, 1000, 950, 950, 900, 850, 1300, 1150,
+    EM_cuts=scaling * np.array([1150, 1150, 1200, 1150, 1100, 1100, 1050, 1050, 1000, 1000, 950, 950, 900, 850, 1300, 1150,
                        1050, 1000, 1050, 950, 950, 900, 850, 900, 800, 2150, 2000, 1800, 1100], dtype=np.float32)
 
-    HAD_cuts=np.array(scaling*[0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,500 ,950 ,850 ,700 ,750 ,700 ,650 ,650, 600,
+    HAD_cuts=scaling * np.array([0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,500 ,950 ,850 ,700 ,750 ,700 ,650 ,650, 600,
                        550 ,1300 ,1250 ,1150 ,350], dtype=np.float32)
     
     #Initialize the result array with nan values and same shape as jTower_eta
@@ -732,7 +732,10 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
 
     #Check if the mask caused the jTower_(et,eta,phi)_event to be empty (if so, append NaN)
     if len(jTower_et_event) == 0:
-        isolated_energy_event.append(np.nan)
+        if get_mask==True:
+            masks.append(mask)
+        for i in range(len(muon_eta_event)):
+            isolated_energy_event.append(np.nan)
         return isolated_energy_event, masks
     
     for (eta, phi) in zip(muon_eta_event, muon_phi_event):
@@ -762,6 +765,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
             isolated_energy_event.append(T)
         else:
             isolated_energy_event.append(np.nan)
+            
     
     #if get_mask is True, return the result and the mask, otherwise just the result
     return isolated_energy_event, masks
