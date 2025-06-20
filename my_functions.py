@@ -928,7 +928,8 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
     return ROC_curve, events_Zmumu, events_ZeroBias
 
 def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=1):
+                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=1, title=fr"ROC Curve - Comparing different $\Delta R$ ranges",
+                    plot_show=True):
 
     """
     This function plots the ROC curve for a given delta r range.
@@ -962,12 +963,13 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
     plt.grid(alpha=0.5, linestyle="--")
     plt.xlabel("False Positive Rate (FPR)")
     plt.ylabel("True Positive Rate (TPR)")
-    plt.title(fr"ROC Curve - Comparing different $\Delta R$ ranges")
+    plt.title(title)
     plt.legend(legend, loc='lower right') #loc='lower right' is used to avoid the legend to overlap with the plot
     plt.tight_layout() 
     plt.plot([0,1],[0,1], linestyle='--', color="black")
     plt.plot([0,1],[0.9,0.9], linestyle="--", color="red")
-    plt.show()
+    if plot_show:
+        plt.show()
 
     return ROC_curve
 
