@@ -78,7 +78,7 @@ def histogram2errors(data1, data2, nbins, x_range, x_label, y_label, title_label
 
 
 def coolplot(data,bins,colors=["#0072B2", "#FD0000", 'g'],labels=["data1", "data2", "data3"],x_label="xlabel",y_label="ylabel",title="hist",
-             plot_show=True, ax=None):
+             plot_show=True, ax=None, collect_overflow=True):
     """
     This function is designed to create a comparative histogram of N sets of data with their respective errorbars included.
     Introduce a data vector, that contains one column for each dataset that has to be plotted data=[[set_a],[set_b],...]
@@ -89,8 +89,22 @@ def coolplot(data,bins,colors=["#0072B2", "#FD0000", 'g'],labels=["data1", "data
     same for title 
     """
 
-    #All outsider values will appear concentrated on the first and last bins
-    bins_overflow = np.concatenate([[-np.inf], bins[1:-1], [np.inf]]) 
+    # If overflow bins are included, collect al overflow values in the first and last bin
+    if collect_overflow:
+        bins_used = np.concatenate([[-np.inf], bins[1:-1], [np.inf]])
+    else:
+        bins_used = bins
+
+    plot_bins = bins_used.copy()
+    if collect_overflow:
+        # Replace -inf and +inf for plotting
+        if np.isneginf(plot_bins[0]):
+            plot_bins[0] = bins[0] - (bins[1] - bins[0])
+        if np.isposinf(plot_bins[-1]):
+            plot_bins[-1] = bins[-1] + (bins[-1] - bins[-2])
+
+    #Create bin centers
+    x_vals = 0.5 * (plot_bins[1:] + plot_bins[:-1])
 
     #Initialize lists
     hists = []
@@ -98,7 +112,7 @@ def coolplot(data,bins,colors=["#0072B2", "#FD0000", 'g'],labels=["data1", "data
 
     #Compute histograms
     for i in range(len(data)):
-        hists.append(np.histogram(ak.flatten(data[i], axis=None), bins=bins_overflow)[0])
+        hists.append(np.histogram(ak.flatten(data[i], axis=None), bins=bins_used)[0])
         error.append(np.sqrt(hists[i]))
 
     # If ax is None, get the current Axes object from plt (done to allow subplots)
@@ -112,7 +126,7 @@ def coolplot(data,bins,colors=["#0072B2", "#FD0000", 'g'],labels=["data1", "data
         error[i] = error[i] / norm
         #Stepfunction
         axis.step(
-            bins[:-1],
+            x_vals,
             hists[i],
             where='mid',
             color=colors[i],
@@ -121,7 +135,7 @@ def coolplot(data,bins,colors=["#0072B2", "#FD0000", 'g'],labels=["data1", "data
         )
         #Add errors
         axis.errorbar(
-            x=bins[:-1],
+            x_vals,
             y=hists[i],
             yerr=error[i],
             color='black',
