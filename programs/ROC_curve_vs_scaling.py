@@ -51,7 +51,7 @@ x_label=r"$\left( \frac{E_{iso}}{E_{t,muon}} \right)$"
 y_label=r"Counts"
 title = rf"$\left( \frac{{E_{{iso}}}}{{E_{{t,muon}}}}\right)$ ratio histogram, scaling={scaling}"
 #Plot
-fig, axis = plt.subplots(2, 2, figsize=(12, 8))
+fig, axis = plt.subplots(3, 2, figsize=(12, 8))
 coolplot(data_1, bins, colors, labels, x_label, y_label, title, ax=axis[0, 0])
 
 #------------------2nd subplot------------------------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ coolplot(data_2, bins, colors, labels, x_label, y_label, title, ax=axis[0, 1])
 
 #------------------3rd subplot------------------------------------------------------------------------------------------------
 #Set scaling factor
-scaling=1.5
+scaling=1.2
 #Compute isolation
 res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
 res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
@@ -104,7 +104,7 @@ coolplot(data_3, bins, colors, labels, x_label, y_label, title, ax=axis[1, 0])
 
 #------------------4th subplot------------------------------------------------------------------------------------------------
 #Set scaling factor
-scaling=2
+scaling=1.5
 #Compute isolation
 res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
 res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
@@ -126,12 +126,62 @@ y_label=r"Counts"
 title = rf"$\left( \frac{{E_{{iso}}}}{{E_{{t,muon}}}}\right)$ ratio histogram, scaling={scaling}"
 coolplot(data_4, bins, colors, labels, x_label, y_label, title, ax=axis[1, 1])
 
+
+#------------------5th subplot------------------------------------------------------------------------------------------------
+#Set scaling factor
+scaling=1.8
+#Compute isolation
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+#Compute ratio
+data1=ak.flatten(res1)/ak.flatten(ZeroBias_pt)
+data2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
+#Compute number of non empty events
+events1=ak.sum(ak.num(ZeroBias_pt) > 0)
+events2=ak.sum(ak.num(Zmumu_pt) > 0)
+#Prepare plot
+data_5=[data1, data2]
+bins=np.linspace(0.0,0.3,40)
+colors=["#0072B2", "#FD0000"]
+label1=f"Zero Bias, events={events1}"
+label2=fr"Z $\to \mu \mu$, events={events2}"
+labels=[label1, label2]
+x_label=r"$\left( \frac{E_{iso}}{E_{t,muon}} \right)$"
+y_label=r"Counts"
+title = rf"$\left( \frac{{E_{{iso}}}}{{E_{{t,muon}}}}\right)$ ratio histogram, scaling={scaling}"
+coolplot(data_5, bins, colors, labels, x_label, y_label, title, ax=axis[2, 0])
+
+
+#------------------6th subplot------------------------------------------------------------------------------------------------
+#Set scaling factor
+scaling=2
+#Compute isolation
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+#Compute ratio
+data1=ak.flatten(res1)/ak.flatten(ZeroBias_pt)
+data2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
+#Compute number of non empty events
+events1=ak.sum(ak.num(ZeroBias_pt) > 0)
+events2=ak.sum(ak.num(Zmumu_pt) > 0)
+#Prepare plot
+data_6=[data1, data2]
+bins=np.linspace(0.0,0.3,40)
+colors=["#0072B2", "#FD0000"]
+label1=f"Zero Bias, events={events1}"
+label2=fr"Z $\to \mu \mu$, events={events2}"
+labels=[label1, label2]
+x_label=r"$\left( \frac{E_{iso}}{E_{t,muon}} \right)$"
+y_label=r"Counts"
+title = rf"$\left( \frac{{E_{{iso}}}}{{E_{{t,muon}}}}\right)$ ratio histogram, scaling={scaling}"
+coolplot(data_6, bins, colors, labels, x_label, y_label, title, ax=axis[2, 1])
+
 plt.show()
 
 # %%
 fig, axis = plt.subplots(1,1 , figsize=(8, 6))
 ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias,Zmumu_pt,Zmumu_eta,Zmumu_phi,
-                          ZeroBias_pt, ZeroBias_eta, ZeroBias_phi, event_range=[nmin,nmax], bin_range=[0,0.5])
+                          ZeroBias_pt, ZeroBias_eta, ZeroBias_phi, event_range=[nmin,nmax], bin_range=[0,0.5], amount_of_curves=4)
 
 # %%
 

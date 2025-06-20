@@ -23,8 +23,8 @@ OFFLINE MUON PLOTS
 DIFFERENT DELTA R LIMITS - CHANGING LOWER AND UPPER LIMITS
 """""""""""""""""""""""""""""""""
 #Choose the number of events to plot
-Z_mumu_nmin1=0
-Z_mumu_nmax1=1000
+Z_mumu_nmin1=5000
+Z_mumu_nmax1=7000
 
 #Apply energy cut
 Z_mumu_eta=MuonTree_Zmumu["muon_eta"].array()
@@ -33,16 +33,19 @@ Z_mumu_pt=MuonTree_Zmumu["muon_pt"].array()
 Z_mumu_quality=MuonTree_Zmumu["muon_quality"].array()
 
 #Assign eta and phi variables Zmumu
-Z_mumu_eta=quality_selector(Z_mumu_quality,Z_mumu_eta,0)[Z_mumu_nmin1:Z_mumu_nmax1]
-Z_mumu_phi=quality_selector(Z_mumu_quality,Z_mumu_phi,0)[Z_mumu_nmin1:Z_mumu_nmax1]
-Z_mumu_pt=quality_selector(Z_mumu_quality,Z_mumu_pt,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+Zmumu_eta=quality_selector(Z_mumu_quality,Z_mumu_eta,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+Zmumu_phi=quality_selector(Z_mumu_quality,Z_mumu_phi,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+Zmumu_pt=quality_selector(Z_mumu_quality,Z_mumu_pt,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+
+#And select the Z peak pairs
+Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 
 #Check how many events are not empty
-Z_mumu_non_empty_count = ak.sum(ak.num(Z_mumu_eta[Z_mumu_nmin1:Z_mumu_nmax1]) > 0)
+Z_mumu_non_empty_count = ak.sum(ak.num(Zmumu_eta) > 0)
 
 #Choose the number of events to plot
-ZeroBias_nmin1=0
-ZeroBias_nmax1=1000
+ZeroBias_nmin1=5000
+ZeroBias_nmax1=7000
 
 #Assign eta and phi variables Zero Bias
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
@@ -50,7 +53,7 @@ ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias[
 ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
 
 #Check how many events are not empty
-ZeroBias_non_empty_count = ak.sum(ak.num(ZeroBias_eta[ZeroBias_nmin1:ZeroBias_nmax1]) > 0)
+ZeroBias_non_empty_count = ak.sum(ak.num(ZeroBias_eta) > 0)
 
 """
 I define this functions to plot everything more comfortably and as subplots
@@ -61,8 +64,8 @@ def f(lower_dr,upper_dr,ax):
     plt.sca(ax)
 
     #Compute the isolation and prepare it for plotting 
-    Z_mumu_res=muon_isolation_all_events(MuonTree_ZeroBias,Z_mumu_eta,Z_mumu_phi,lower_dr,upper_dr,[Z_mumu_nmin1,Z_mumu_nmax1],1000)
-    Z_mumu_data=ak.flatten(Z_mumu_res)/ak.flatten(Z_mumu_pt)
+    Zmumu_res=muon_isolation_all_events(MuonTree_ZeroBias,Zmumu_eta,Zmumu_phi,lower_dr,upper_dr,[Z_mumu_nmin1,Z_mumu_nmax1],1000)
+    Z_mumu_data=ak.flatten(Zmumu_res)/ak.flatten(Zmumu_pt)
 
     ZeroBias_res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,lower_dr,upper_dr,[ZeroBias_nmin1,ZeroBias_nmax1],1000)
     ZeroBias_data=ak.flatten(ZeroBias_res)/ak.flatten(ZeroBias_pt)
@@ -74,7 +77,7 @@ def f(lower_dr,upper_dr,ax):
 
     #Plot the data
     coolplot([Z_mumu_data,ZeroBias_data],
-                np.linspace(0,0.5,30),
+                np.linspace(0,0.3,30),
                 colors,labels,
                 "Isolation / Transverse energy","Counts",
             fr"$\Delta R$= [{np.round(lower_dr,2)},{np.round(upper_dr,2)}]",
@@ -105,8 +108,8 @@ upper_dr_arr=[0.4,0.4,0.4,0.4]
 
 f_subplots(low_dr_arr,upper_dr_arr)
 
-low_dr_arr=[0,0.2,0.4,0.6]
-upper_dr_arr=[0.4,0.6,0.8,1.0]
+low_dr_arr=[0,0.05,0.1,0.05]
+upper_dr_arr=[0.3,0.3,0.4,0.25]
 
 f_subplots(low_dr_arr,upper_dr_arr)
 
