@@ -1304,21 +1304,22 @@ def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmum
     Returns:
     -Plot
     """
+    #Compute the FPR
     FPR_effs, dr_mins, dr_maxs= ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                          event_range, dr_min_range, dr_max_range, steps, target_efficiency, bins)
     
-    x=dr_mins
-    y=dr_maxs
-
-    x,y = np.meshgrid(x,y)
+    #Create a 2D grid with the dr values
+    y, x = np.meshgrid(dr_maxs,dr_mins)
     # Create scatter plot with color representing values
-    plt.scatter(x, y, c=FPR_effs, cmap='viridis', s=200)  # s controls dot size
-    plt.colorbar(label='FPR at TPR = {:.2f}'.format(target_efficiency))
-    plt.xlabel('dr_min')
-    plt.ylabel('dr_max')
-    plt.title('FPR at TPR = {:.2f} over ΔR Ranges'.format(target_efficiency))
-    plt.grid(True)
+    plt.scatter(x, y, c=FPR_effs, cmap='Blues_r', s=200, edgecolors='k')  # s controls dot size
+    plt.colorbar(label=fr"FPR({target_efficiency*100}%)")
+    plt.xlabel(r"$\Delta R_{min}$")
+    plt.ylabel(r"$\Delta R_{max}$")
+    plt.title(rf"FPR({target_efficiency*100}%) over $\Delta R$ ranges")
+    plt.grid(True, alpha=0.5, linestyle='--')
     plt.show()
+
+    return FPR_effs, dr_mins, dr_maxs
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """
