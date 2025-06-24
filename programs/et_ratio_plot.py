@@ -13,8 +13,8 @@ MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 #Choose the range of events to plot
 nmin=0
 nmax=10000
-dr_min=0.2
-dr_max=0.6
+dr_min=0.05
+dr_max=0.32
 
 #Select quality 0 Z->mumu
 Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin:nmax]
@@ -50,7 +50,7 @@ ratio2=data2/ak.flatten(Zmumu_pt)
 e1=ak.flatten(ZeroBias_pt)
 e2=ak.flatten(Zmumu_pt)
 #Prepare the limits
-xlim=65000
+xlim=100000
 ylim=0.35
 
 #Remove NaN and empty

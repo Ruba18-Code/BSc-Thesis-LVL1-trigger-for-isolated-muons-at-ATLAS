@@ -11,8 +11,8 @@ file= uproot.open("/home/ruben/Escritorio/BachelorThesisRuben/Data/Muon_trees.ro
 MuonTree_ZeroBias=file["MuonTree_ZeroBias;1"]
 MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 
-nmin=0
-nmax=2000
+nmin=1000
+nmax=3000
 
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin:nmax]
 ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin:nmax]
@@ -28,7 +28,7 @@ Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_p
 # %%
 target_efficiency=0.9
 bins=np.linspace(0,3,5*int(np.sqrt(nmax-nmin)))
-dr_min=np.linspace(0.17,0.17,8)
+dr_min=np.linspace(0.0,0.0,8)
 dr_max=np.linspace(0.2,0.5,8)
 
 ROC_values, _, _ = compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
@@ -51,7 +51,7 @@ plt.show()
 
 target_efficiency=0.9
 bins=np.linspace(0,3,5*int(np.sqrt(nmax-nmin)))
-dr_max=np.linspace(0.5,0.5,8)
+dr_max=np.linspace(0.4,0.4,8)
 dr_min=np.linspace(0.0,0.2,8)
 
 ROC_values, _, _ = compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,

@@ -30,7 +30,7 @@ ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["
 scaling=0.5
 #Set dr
 dr_min=0.05
-dr_max=0.3
+dr_max=0.32
 #Compute isolation
 res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
 res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
