@@ -1220,6 +1220,105 @@ def ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias, Zmumu_pt,
     plt.show()
 
     return()
+
+def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                 event_range: tuple = [0,5000], dr_min: float = 0.05, dr_max: float=0.3, target_efficiency: float=0.9,
+                   bins: list = np.linspace(0,1,1000)):
+    """
+    Computes the False Positive Rate (FPR) at a given target signal efficiency (TPR)
+    for the isolation ROC curves between Zmumu and ZeroBias events.
+
+    Inputs:
+    -MuonTree_Zmumu : tree containing Zmumu data.
+    -MuonTree_ZeroBias : tree containing ZeroBias data.
+    -Zmumu_pt/eta/phi or ZeroBias_pt/eta/phi : array containing transverse mometum, eta and phi for Zmumu or ZeroBias
+    -event_range : tuple of int, range of event indices to use (default is [0, 5000]).
+    -dr_min : float, minimum delta R used in the ROC computation (default is 0.05).
+    -dr_max : float, maximum delta R used in the ROC computation (default is 0.3).
+    -target_efficiency : float, signal efficiency (TPR) to evaluate FPR at (default is 0.9).
+    -bins : list, bins for the histogram used in ROC computation (default is linspace from 0 to 1 with 1000 bins).
+
+    Returns:
+    -FPR_eff : float, False Positive Rate at the specified target signal efficiency.
+    dr_min : float, minimum delta R value used in computation.
+    dr_max : float, maximum delta R value used in computation (for reference).
+    """
+    nmin, nmax= event_range
+    ROC_values, _, _ = compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                            [nmin,nmax],[nmin,nmax], bins, [dr_min], [dr_max])
+    FPR=ROC_values[0][0]
+    TPR=ROC_values[0][1]
+    FPR_eff=np.min(FPR[TPR >= target_efficiency])
+
+    return FPR_eff, dr_min, dr_max
+
+def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                 event_range: tuple = [0,5000], dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
+                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000)):
+    """
+    Reliying on the ROC_FPR_efficieny function, computes and returns the FPR for a given TPR efficieny for a given set of delta R values
+
+    Inputs:
+    -MuonTree_Zmumu : tree containing Zmumu data.
+    -MuonTree_ZeroBias : tree containing ZeroBias data.
+    -Zmumu_pt/eta/phi or ZeroBias_pt/eta/phi : array containing transverse mometum, eta and phi for Zmumu or ZeroBias
+    -event_range : tuple of int, range of event indices to use (default is [0, 5000]).
+    -dr_min : list of floats, minimum delta R range used in the ROC computation 
+    -dr_max : list of floats, maximum delta R range used in the ROC computation 
+    -target_efficiency : float, signal efficiency (TPR) to evaluate FPR at (default is 0.9).
+    -bins : list, bins for the histogram used in ROC computation (default is linspace from 0 to 1 with 1000 bins).
+
+    Returns:
+    -FPR_effs : list of floats, False Positive Rates at the specified target signal efficiency.
+    dr_min : float, minimum delta R values used in computation.
+    dr_max : float, maximum delta R values used in computation (for reference).
+    """
+    dr_mins=np.linspace(dr_min_range[0], dr_min_range[1], steps)
+    dr_maxs=np.linspace(dr_max_range[0], dr_max_range[1], steps)
+    FPR_effs=[]
+    for i in range(steps):
+        for j in range(len(dr_maxs)):
+            dr_min, dr_max = dr_mins[i], dr_maxs[j]
+            FPR_eff, _, _=ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+            event_range, dr_min, dr_max, target_efficiency, bins)
+            FPR_effs.append(FPR_eff)
+    FPR_effs = np.array(FPR_effs).reshape((steps, steps))
+    return FPR_effs, dr_mins, dr_maxs
+
+def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                 event_range: tuple = [0,5000], dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
+                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000)):
+    """
+    Plots a scatterplot containing the FPR(target_efficiency) values for a given dr_min, dr_max grid, relying on the ROC_FPR_efficiencies function 
+
+    Inputs:
+    -MuonTree_Zmumu : tree containing Zmumu data.
+    -MuonTree_ZeroBias : tree containing ZeroBias data.
+    -Zmumu_pt/eta/phi or ZeroBias_pt/eta/phi : array containing transverse mometum, eta and phi for Zmumu or ZeroBias
+    -event_range : tuple of int, range of event indices to use (default is [0, 5000]).
+    -dr_min : list of floats, minimum delta R range used in the ROC computation 
+    -dr_max : list of floats, maximum delta R range used in the ROC computation 
+    -target_efficiency : float, signal efficiency (TPR) to evaluate FPR at (default is 0.9).
+    -bins : list, bins for the histogram used in ROC computation (default is linspace from 0 to 1 with 1000 bins).
+
+    Returns:
+    -Plot
+    """
+    FPR_effs, dr_mins, dr_maxs= ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                         event_range, dr_min_range, dr_max_range, steps, target_efficiency, bins)
+    
+    x=dr_mins
+    y=dr_maxs
+
+    x,y = np.meshgrid(x,y)
+    # Create scatter plot with color representing values
+    plt.scatter(x, y, c=FPR_effs, cmap='viridis', s=200)  # s controls dot size
+    plt.colorbar(label='FPR at TPR = {:.2f}'.format(target_efficiency))
+    plt.xlabel('dr_min')
+    plt.ylabel('dr_max')
+    plt.title('FPR at TPR = {:.2f} over ΔR Ranges'.format(target_efficiency))
+    plt.grid(True)
+    plt.show()
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """
