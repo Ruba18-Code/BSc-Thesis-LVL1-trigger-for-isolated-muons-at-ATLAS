@@ -4,9 +4,12 @@ import numpy as np #math and science package
 import scipy as sp #math and science package
 import awkward as ak #root files are usually awkward arrays 
 import matplotlib.pyplot as plt #plot stuff
+from matplotlib.patches import Rectangle
 import itertools
 from tqdm import tqdm #generated progress bars and estimates the computation time
 from numba import njit #numba helps to speed up calculations if the code is written in a certain way
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset #zoom inset
+
 
 def histogram(data, nbins, x_range,  x_label, y_label, title_label):
     plt.hist(data, bins=nbins, range=x_range, color=plt.cm.viridis(0.9), edgecolor= 'black', density=True, alpha=0.7)   #plot the histogram of the data, for example 100 bins between -3 and 3
@@ -955,23 +958,49 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
     legend=[]
     ROC_curve, events_Zmumu, _=compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                     Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=scaling)
-    #Loop over the different dr_min and dr_max
+
+    fig, ax = plt.subplots()  
+
+    # Plot ROC curves
     for i in range(len(ROC_curve)):
         plt.plot(ROC_curve[i][0], ROC_curve[i][1], marker=".", label=fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
         legend.append(f"ΔR = [{np.round(dr_min[i], 2)}, {np.round(dr_max[i], 2)}]\nEvents = {events_Zmumu[i]}")
 
-    plt.grid(alpha=0.5, linestyle="--")
-    plt.xlabel("False Positive Rate (FPR)")
-    plt.ylabel("True Positive Rate (TPR)")
-    plt.title(title)
-    plt.legend(legend, loc='lower right') #loc='lower right' is used to avoid the legend to overlap with the plot
-    plt.tight_layout() 
-    plt.plot([0,1],[0,1], linestyle='--', color="black")
-    plt.plot([0,1],[0.9,0.9], linestyle="--", color="red")
+    # Axis labels and grid
+    ax.set_xlabel("False Positive Rate (FPR)")
+    ax.set_ylabel("True Positive Rate (TPR)")
+    ax.set_title(title)
+    ax.grid(alpha=0.5, linestyle="--")
+    ax.legend(legend, loc='lower right')
+    ax.plot([0, 1], [0, 1], linestyle='--', color="black")
+    ax.plot([0, 1], [0.9, 0.9], linestyle="--", color="red")
+
+    #This part of the code draws the zoom inset
+    # Create the zoom inset
+    bbox = (0.1, 0.65, 0.3, 0.3)  
+    axins = inset_axes(ax,
+                  width="100%", height="100%",  
+                  bbox_to_anchor=bbox,
+                  bbox_transform=ax.transAxes,
+                  loc='lower left',
+                  borderpad=0)
+    # Plot same data in inset
+    for i in range(len(ROC_curve)):
+        axins.plot(ROC_curve[i][0], ROC_curve[i][1], marker=".")
+    # Set zoom limits
+    x1, x2 = 0.79, 0.89
+    y1, y2 = 0.89, 0.91
+    axins.set_xlim(x1, x2)
+    axins.set_ylim(y1, y2)
+    axins.grid(alpha=0.5, linestyle="--")
+    axins.axhline(0.9, linestyle='--', color='red')
+    # Draw a box and lines to connect inset to zoomed area
+    mark_inset(ax, axins, loc1=1, loc2=4, fc="none", ec="0.5", linestyle='--')
     if plot_show:
         plt.show()
 
     return ROC_curve
+
 
 def ROC_curve_distance(ROC_curve):
     """
