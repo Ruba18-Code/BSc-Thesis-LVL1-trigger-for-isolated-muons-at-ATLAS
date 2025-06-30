@@ -623,7 +623,7 @@ def isAll_below_threshold(data, threshold):
 #-----------------------------------------------------------------------------------------------
 def dr_threshold_boolean_mask_event(event_dr,lower_threshold,upper_threshold):
 
-    """"
+    """
     Takes an array containing the delta r values for an event and its respective jTower,
     then it starts to iterate over al muons in the event and generates a boolean mask containing 'True'
     for all delta_r values that are contained in a certain interval (lower_threshold,upper_threshold)
@@ -638,7 +638,7 @@ def dr_threshold_boolean_mask_event(event_dr,lower_threshold,upper_threshold):
     event_dr = np.array(event_dr)  # ensures it's a NumPy array
     return (lower_threshold**2 < event_dr) & (event_dr < upper_threshold**2)
 
-def jTower_assign_cuts(tree, start=0, stop=1, scaling=1):
+def jTower_assign_cuts(tree, start: int=0, stop: int=1, scaling: float =1.0):
 
     """
     This function assigns different energy cuts to the jTower energies based on the eta values. Each eta bin has a different cut value.
@@ -647,7 +647,7 @@ def jTower_assign_cuts(tree, start=0, stop=1, scaling=1):
 
     Inputs:
         -tree: the tree to get eta and calosource values from (MuonTree_ZeroBias or MuonTree_Zmumu)
-
+        -scaling: float, multiplicative factor for the noise cuts (1 by default)
     Returns:
         -result: array containing the cut energy value for each jTower.
 
@@ -695,7 +695,7 @@ def jTower_assign_cuts(tree, start=0, stop=1, scaling=1):
     return ak.Array(result)
 
 def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, jTower_phi_event, jTower_et_event,
-                             lower_threshold,upper_threshold, jTower_cuts, get_mask):
+                             lower_threshold,upper_threshold, jTower_cuts, get_mask: bool=False):
 
     """
     Inputs:
@@ -767,9 +767,8 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
     #if get_mask is True, return the result and the mask, otherwise just the result
     return isolated_energy_event, masks
 
-
-def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size=10000, get_mask=False,
-                              scaling=1):
+def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, upper_threshold, event_range, batch_size: int=10000, get_mask: bool =False,
+                              scaling: float=1):
     """
     This function computes muon isolation for all events in batches of a certain size to avoid crashing the computer.
     
@@ -798,27 +797,22 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
     #batch_stop is written like that to prevent going out of range
     for batch_start in tqdm(range(0, total_events, batch_size), desc="muon_isolation_all_events: Computing muon isolation", leave=False):
         batch_stop = min(batch_start + batch_size, total_events)
-
         # Load jTower data only for the current batch
         jTower = tree.arrays(
             ["jTower_eta", "jTower_phi", "jTower_et_MeV"],
             entry_start=start_event + batch_start,
-            entry_stop=start_event + batch_stop
-        )
+            entry_stop=start_event + batch_stop)
         #assign eta, phi and et
         jTower_eta_batch = jTower["jTower_eta"]
         jTower_phi_batch = jTower["jTower_phi"]
         jTower_et_batch  = jTower["jTower_et_MeV"]
-
         #get the muon data for the current batch
-        muon_eta_batch = muon_eta_all[batch_start:batch_stop]
-        muon_phi_batch = muon_phi_all[batch_start:batch_stop]
-
+        muon_eta_batch = muon_eta_all[start_event + batch_start : start_event + batch_stop]
+        muon_phi_batch = muon_phi_all[start_event + batch_start : start_event + batch_stop]
         # Loop over events in a batch
         for i in range(len(muon_eta_batch)):
             muon_eta_event = muon_eta_batch[i]
             muon_phi_event = muon_phi_batch[i]
-
             #Check if the event is empty before starting the calculations. This can reduce the computing time a lot if
             #our data includes many empty events 
             if len(muon_eta_event) == 0:
@@ -838,11 +832,16 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
                 #if get_mask is True, append the mask to the result
                 if get_mask==True:
                     masks.append(mask)
+    print(f"Expected number of events: {total_events}")
+    print(f"Computed isolation for {len(res)} events")
     #if get_mask is True, return the result and the mask, otherwise just the result
     if get_mask==True:
         return res, masks
     else:
         return res
+    
+
+
     
 #####################################################################################################################################3
 def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
