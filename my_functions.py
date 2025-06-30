@@ -694,9 +694,8 @@ def jTower_assign_cuts(tree, start=0, stop=1, scaling=1):
     EM_cuts=scaling * np.array([1150, 1150, 1200, 1150, 1100, 1100, 1050, 1050, 1000, 1000, 950, 950, 900, 850, 1300, 1150,
                        1050, 1000, 1050, 950, 950, 900, 850, 900, 800, 2150, 2000, 1800, 1100], dtype=np.float32)
 
-    HAD_cuts=scaling * np.array([0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,500 ,950 ,850 ,700 ,750 ,700 ,650 ,650, 600,
+    HAD_cuts= scaling * np.array([0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,500 ,950 ,850 ,700 ,750 ,700 ,650 ,650, 600,
                        550 ,1300 ,1250 ,1150 ,350], dtype=np.float32)
-    
     #Initialize the result array with nan values and same shape as jTower_eta
     result = np.full(jTower_eta.shape, np.nan)
 
@@ -988,8 +987,8 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
     for i in range(len(ROC_curve)):
         axins.plot(ROC_curve[i][0], ROC_curve[i][1], marker=".")
     # Set zoom limits
-    x1, x2 = 0.79, 0.89
-    y1, y2 = 0.89, 0.91
+    x1, x2 = 0.825, 0.835
+    y1, y2 = 0.895, 0.91
     axins.set_xlim(x1, x2)
     axins.set_ylim(y1, y2)
     axins.grid(alpha=0.5, linestyle="--")
@@ -1305,7 +1304,7 @@ def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
     dr_mins=np.linspace(dr_min_range[0], dr_min_range[1], steps)
     dr_maxs=np.linspace(dr_max_range[0], dr_max_range[1], steps)
     FPR_effs=[]
-    for i in range(steps):
+    for i in tqdm(range(steps), desc="Computing FPRs...", leave=False):
         for j in range(len(dr_maxs)):
             dr_min, dr_max = dr_mins[i], dr_maxs[j]
             FPR_eff, _, _=ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,

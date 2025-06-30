@@ -13,8 +13,8 @@ MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 #Choose the range of events to plot
 nmin=0
 nmax=10000
-dr_min=0.05
-dr_max=0.32
+dr_min=0.09
+dr_max=0.3
 
 #Select quality 0 Z->mumu
 Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin:nmax]

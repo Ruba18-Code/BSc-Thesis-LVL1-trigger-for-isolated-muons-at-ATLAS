@@ -14,9 +14,9 @@ MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 
 #Choose the range of events to plot
 nmin=0
-nmax=2000
-dr_min=0.2
-dr_max=0.6
+nmax=10000
+dr_min=0.09
+dr_max=0.30
 
 #Select quality 0 Z->mumu
 Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin:nmax]
@@ -26,7 +26,6 @@ Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu
 #And select the Z peak pairs
 Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 
-
 #Select the ZeroBias data with energy cut
 ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin:nmax]
 ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin:nmax]
@@ -35,16 +34,15 @@ ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["
 
 # %%
 #Check how many events are not empty
-non_empty_count1= ak.sum(ak.num(ZeroBias_eta[nmin:nmax]) > 0)
-non_empty_count2 = ak.sum(ak.num(Zmumu_eta[nmin:nmax]) > 0)
 
 #Compute the isolation and prepare it for plotting ZeroBias
 res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,dr_min,dr_max,[nmin,nmax],500)
 data1=ak.flatten(res)
-
+non_empty_count1= len(res)
 #Compute the isolation and prepare it for plotting Z mu mu
 res=muon_isolation_all_events(MuonTree_Zmumu,Zmumu_eta,Zmumu_phi,dr_min,dr_max,[nmin,nmax],500)
 data2=ak.flatten(res)
+non_empty_count2= len(res)
 
 colors=["#0072B2", "#FD0000"]
 labels=[fr"Zero Bias (cut=14GeV), events={non_empty_count1}",fr"Z $\longrightarrow \mu \mu$ (Q=0, Z peak pairs), events={non_empty_count2}"]
@@ -62,8 +60,8 @@ ratio2=data2/ak.flatten(Zmumu_pt)
 colors=["#0072B2", "#FD0000"]
 labels=[fr"Zero Bias (cut=14GeV), events={non_empty_count1}",fr"Z $\longrightarrow \mu \mu$ (Q=0, Z peak pairs), events={non_empty_count2}"]
 
-coolplot([ratio1,ratio2],np.linspace(0,0.6,40),colors,labels, "Isolation/et ratio","Counts",
-         r"$\frac{E_{t,iso}}{E_{t}}$ ratio, $\Delta R= [0.2,0.6]$")
+coolplot([ratio1,ratio2],np.linspace(0,0.3,40),colors,labels, "Isolation/et ratio","Counts",
+         r"$\frac{E_{t,iso}}{E_{t}}$ ratio, $\Delta R= [0.09,0.30]$")
 
 # %%
 #Now let's do the ROC curve
