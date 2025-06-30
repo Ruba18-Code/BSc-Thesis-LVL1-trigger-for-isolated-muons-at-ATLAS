@@ -286,14 +286,6 @@ def invariant_mass_pair_selector(pt,eta,phi):
         chosen_pair = pairs[indx]
 
         return inv_mass, ak.Array([list(chosen_pair[0]), list(chosen_pair[1])])
-    
-    #else for safety
-    else:
-        pair=ak.Array([None,None,None])
-        inv_mass=None
-
-        return(inv_mass, pair)
-
 
 def invariant_mass_all_muons(pt,eta,phi):
 
@@ -319,22 +311,22 @@ def invariant_mass_all_muons(pt,eta,phi):
 
         #If the event involves two muons
         if len(eta[i])==2 and len(phi[i])==2 and len(pt[i]) == 2:
-
             #Unpack
             eta1, eta2= eta[i]
             phi1, phi2 = phi[i]
             pt1, pt2= pt[i]
-
-            #Compute invariant mass
+            #Compute invariant mass and append it
             invariant_masses.append(invariant_mass_pair(pt1, eta1, phi1, pt2, eta2, phi2))
-
         #If it involves more than 2 muons (also check if they're the same length for safety)
         elif len(pt[i]) > 2 and len(pt[i]) == len(eta[i]) == len(phi[i]):
-            m = invariant_mass_pair_selector(pt[i], eta[i], phi[i])
-            if m is not None:  # Ensure that m is not None
-                invariant_masses.append(m[0])
+            inv_mass, _ = invariant_mass_pair_selector(pt[i], eta[i], phi[i])
+            if inv_mass is not None:  # Ensure that m is not None
+                invariant_masses.append(inv_mass)
+            else:
+                invariant_masses.append(np.nan)
+        #If the event involves less than two muons
         else:
-            invariant_masses.append([])
+            invariant_masses.append(np.nan)
 
     return ak.Array(invariant_masses)
 
@@ -352,36 +344,32 @@ def get_all_Z_peak_pairs(pt_events, eta_events, phi_events):
         -pt, eta, phi: three awkward arrays like pt=[[pt1.1,pt1.2],[pt2.1,pt2.2],[pt3.1,pt3.2],...] = [pt_pair1,pt_pair2,pt_pair3...]
     
     """
-    pt =[]
-    eta=[]
-    phi=[]
+    #Initialize empty lists
+    pt, eta, phi =[], [], []
+
     for i in tqdm(range(len(eta_events))):
-        #Execute invariant_mass_pair_selector for the i-th event and get the selected pair (adding [1] at the end)
+        #Get selected pair for the i-th event
         selected_pair = (invariant_mass_pair_selector(pt_events[i], eta_events[i], phi_events[i]))[1]
 
-        #Check if it's None for safety
-        if selected_pair is not None:
-            # Check if selected_pair is structured as expected
-            if len(selected_pair) == 2:
-                pt_pair=[selected_pair[0][0], selected_pair[1][0]]
-                eta_pair=[selected_pair[0][1], selected_pair[1][1]]
-                phi_pair=[selected_pair[0][2],selected_pair[1][2]]
-                
-                # Make sure none of these are None or empty
-                if (pt_pair is not None and eta_pair is not None and phi_pair is not None):
-                    pt.append(pt_pair)
-                    eta.append(eta_pair)
-                    phi.append(phi_pair)
-                    
-                    continue  # continue to next event
-        # If we got here, something was missing or None - append empty array
-        pt.append(np.empty((0,2))), eta.append(np.empty((0,2))), phi.append(np.empty((0,2)))
+        #Safety check: length of pair == 2 and pair is not None
+        if selected_pair is not None and len(selected_pair) == 2:
+
+            pt_pair=[selected_pair[0][0], selected_pair[1][0]]
+            eta_pair=[selected_pair[0][1], selected_pair[1][1]]
+            phi_pair=[selected_pair[0][2],selected_pair[1][2]]
+
+            pt.append(pt_pair)
+            eta.append(eta_pair)
+            phi.append(phi_pair)
+        #If not append empty lists for shape consistency
+        else:
+            pt.append([]), eta.append([]), phi.append([])
     
     return ak.Array(pt),  ak.Array(eta),  ak.Array(phi)
 
 #-----------------------------------------------------------------------------------------------
 
-def quality_selector(quality_data, muon_data, value):
+def quality_selector(quality_data, muon_data, value, verbose=False ):
 
     """
     This function is designed to select only the events that match a certain quality.
@@ -391,7 +379,7 @@ def quality_selector(quality_data, muon_data, value):
         -muon_data: awkward array, contains the data that we want to filter if it matches the specified quality 
         (example: MuonTrees_Zmumu["muon_eta"])
         -value: int, desired quality (0 represents the highest quality)
-
+        -verbose: boolean, decide if the message is printed or not
     Returns:
         -A filtered version of muon_data containing only events where all muons have quality==value
         -Prints a message that informs about how much data has been selected.
@@ -403,8 +391,8 @@ def quality_selector(quality_data, muon_data, value):
     # Apply the mask to select only the events where all muons have the desired quality
     selected_data = muon_data[event_mask]
 
-    # Compute the selection percentage
-    print("quality_selector: Only", (len(selected_data) / len(muon_data)) * 100, r"% of the data has been selected")
+    if verbose:
+        print("quality_selector: Only", (len(selected_data) / len(muon_data)) * 100, r"% of the data has been selected")
 
     return selected_data
 
@@ -477,44 +465,45 @@ def rate_calculator(data,cut,scaling_factor):
     return rate, aux
 
 #---------------------------------------------------------------------------------------
+def jTower_handler(tree, name, xmin, xmax, binsize, chunk_size, xlabel, ylabel, title, showplot):
 
-def jTower_handler(tree,name,xmin,xmax,binsize,chunk_size,xlabel,ylabel,title,showplot):
+    # This function aims to manipulate the jTower data
+    # Since these datasets are very large, it divides them into chunks (recommended value: chunk_size= 10000)
+    # It also returns how many chunks have been made ('steps')
+    # Finally, it calculates a histogram with the sum of all the chunk histograms and plots it if showplot is True
 
-    #This function aims to manipulate the jTower data
-    #Since these datasets are very large, it divides them into chunks (recommended value: chunk_size= 10000)
-    #It also returns how many chunks have been made ('steps')
-    #Finally, it calculates a histogram with the sum of all the chunk histograms and plots it if showplot is True
+    # 'name' must be a string of characters like: "muon_et" for instance
 
-    #'name' must be a string of characters like: "muon_et" for instance
+    # Initialize these variables
+    steps = 0
+    hists = []
 
- #Initialize these variables
- steps=0
- hists=[]
+    # Create the x axis 
+    bins = np.arange(xmin, xmax, binsize)
 
- #Create the x axis 
- bins=np.arange(xmin,xmax,binsize)
+    # Slice the dataset in chunks of size 'chunk_size' and count the amount of chunks 
+    for data in tqdm(tree.iterate([name], step_size=chunk_size), desc="jTower_handler: iterating..."):
+        data = data[name]
+        steps += 1
+        # Compute histogram for all chunks
+        hists.append(np.histogram(ak.flatten(data, axis=None), bins)[0])
 
- #Slice the dataset in chunks of size 'chunk_size' and count the amount of chunks 
- for data in tqdm(tree.iterate([name], step_size=chunk_size)):
-       data = data[name]
-       steps=steps+1
-        #Compute histogram for all chunks
-       hists.append(np.histogram(ak.flatten(data, axis=None),bins)[0])
+    # Add the histograms together
+    combined_histogram = sum(hists)
 
- #Add the histograms together
- combined_histogram=sum(hists)
-
- #Plot the histogram
- if showplot == True:
-      bins=np.arange(xmin,xmax-binsize,binsize) #There is one bin less, this is necessary
-      plt.plot(bins,combined_histogram,color='b')
-      plt.xlabel(xlabel)
-      plt.ylabel(ylabel)
-      plt.title(title)
-      plt.grid(True,linestyle='--', alpha=0.5)
-      plt.show()
+    # Plot the histogram
+    if showplot:
+        # There is one less bin edge than bins, so adjust bins accordingly for plotting
+        bins_for_plot = np.arange(xmin, xmax - binsize, binsize)
+        plt.plot(bins_for_plot, combined_histogram, color='b')
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.grid(True, linestyle='--', alpha=0.5)
+        plt.show()
       
- return(combined_histogram, steps)
+    return combined_histogram, steps
+
 
 def jTower_selector(tree, names, n):
 

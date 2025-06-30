@@ -13,7 +13,7 @@ MuonTree_ZeroBias=file["MuonTree_ZeroBias;1"]
 xmin=10**4
 xmax=8*10**4
 binsize=abs(xmin-xmax)/100
-chunk_size=1000
+chunk_size=10000
 
 xlabel=r"$e_T$ (MeV)"
 ylabel=r"Counts"
@@ -28,7 +28,7 @@ _,_, = jTower_handler(tree,name,xmin,xmax,binsize,chunk_size,xlabel,ylabel,title
 xmin=-5
 xmax=5
 binsize=abs(xmin-xmax)/100
-chunk_size=1000
+chunk_size=10000
 
 xlabel=r"$\eta$"
 ylabel=r"Counts"
@@ -43,7 +43,7 @@ _,_, = jTower_handler(tree,name,xmin,xmax,binsize,chunk_size,xlabel,ylabel,title
 xmin=-4
 xmax=4
 binsize=abs(xmin-xmax)/100
-chunk_size=1000
+chunk_size=10000
 
 xlabel=r"$\phi$"
 ylabel=r"Counts"
