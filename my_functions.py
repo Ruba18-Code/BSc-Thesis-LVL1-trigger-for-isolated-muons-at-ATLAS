@@ -369,7 +369,7 @@ def get_all_Z_peak_pairs(pt_events, eta_events, phi_events):
 
 #-----------------------------------------------------------------------------------------------
 
-def quality_selector(quality_data, muon_data, value, verbose=False ):
+def quality_selector(quality_data, muon_data, value, verbose=False):
 
     """
     This function is designed to select only the events that match a certain quality.
@@ -807,8 +807,8 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
         jTower_phi_batch = jTower["jTower_phi"]
         jTower_et_batch  = jTower["jTower_et_MeV"]
         #get the muon data for the current batch
-        muon_eta_batch = muon_eta_all[start_event + batch_start : start_event + batch_stop]
-        muon_phi_batch = muon_phi_all[start_event + batch_start : start_event + batch_stop]
+        muon_eta_batch = muon_eta_all[batch_start:batch_stop]
+        muon_phi_batch = muon_phi_all[batch_start:batch_stop]
         # Loop over events in a batch
         for i in range(len(muon_eta_batch)):
             muon_eta_event = muon_eta_batch[i]
@@ -832,15 +832,11 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
                 #if get_mask is True, append the mask to the result
                 if get_mask==True:
                     masks.append(mask)
-    print(f"Expected number of events: {total_events}")
-    print(f"Computed isolation for {len(res)} events")
     #if get_mask is True, return the result and the mask, otherwise just the result
     if get_mask==True:
         return res, masks
     else:
         return res
-    
-
 
     
 #####################################################################################################################################3
@@ -1402,4 +1398,57 @@ def generate_random_float_pairs(min_val, max_val, n, min_diff=0.2):
     final_maxs = np.concatenate(maxs_list)[:n]
     
     return final_mins, final_maxs
+
+
+#------------------------------------------------------------------------
+def quality_selector_with_empty(quality_data, muon_data, value):
+    """
+    Filters muons within each event based on quality == value.
+    Preserves event structure: outputs empty lists for events with no muons passing the cut.
+    
+    Inputs:
+        - quality_data: awkward array, containing the quality of the muons
+        - muon_data: awkward array, containing the muon variables (pt, eta, phi, etc.)
+        - value: int, desired quality
+    
+    Returns:
+        - filtered_muon_data: awkward array, containing the muons that have the desired quality
+    """
+    # Create mask True if quality == value
+    mask = (quality_data == value)
+    # Apply mask
+    filtered_muon_data = muon_data[mask]
+    
+    return filtered_muon_data
+
+
+def energy_cut_with_empty(energy_array, muon_array, lower_cut=14*10**3, upper_cut=np.inf, verbose: bool=False):
+    """
+    Select muons within energy range. Keeps original event indices.
+    Events not passing the cut become empty lists to keep array length.
+
+    Inputs:
+        energy_array: awkward array, muon energies
+        muon_array: awkward array, muon variables (pt, eta, phi, etc.)
+        lower_cut: lower energy cut (default 14000 MeV)
+        upper_cut: upper energy cut (default infinite)
+        verbose: bool, print the percentage of events that survived the cut if True
+
+    Returns:
+        result: awkward array of muons that pass the energy cut with original event indices preserved
+    """
+
+    # Mask muons inside each event that are within the energy cut
+    mask_muons = (energy_array >= lower_cut) & (energy_array <= upper_cut)
+    # Apply mask inside events to filter muons
+    filtered_muons = muon_array[mask_muons]
+    #Print if desired
+    if verbose:
+        print(f"energy_cut_keep_indices: {
+            np.round(len(filtered_muons[ak.num(filtered_muons)>0]) / len(muon_array) * 100, 2)}% of events survived the cut.")
+
+    return filtered_muons
+
+
+
 # %%
