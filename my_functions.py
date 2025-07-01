@@ -353,11 +353,11 @@ def get_all_Z_peak_pairs(pt_events, eta_events, phi_events):
 
         #Safety check: length of pair == 2 and pair is not None
         if selected_pair is not None and len(selected_pair) == 2:
-
+            #Unpack
             pt_pair=[selected_pair[0][0], selected_pair[1][0]]
             eta_pair=[selected_pair[0][1], selected_pair[1][1]]
             phi_pair=[selected_pair[0][2],selected_pair[1][2]]
-
+            #Append
             pt.append(pt_pair)
             eta.append(eta_pair)
             phi.append(phi_pair)
@@ -720,7 +720,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
     isolated_energy_event=[]
     masks=[]
 
-    #Take the jTowers with negative energy out (they appear due to technical features of the detector)
+    #Filter tower energies (noise cuts)
     mask= jTower_et_event > jTower_cuts
 
     jTower_et_event=jTower_et_event[mask]
@@ -784,7 +784,11 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
     """
     #First compute the cuts for the jTower energies
     jTower_cuts=ak.flatten(jTower_assign_cuts(tree,scaling=scaling))
- 
+    #Since jTower_eta and jTower_phi are equal for all events, pre-asign them outside of the loop, using the first event for instance
+    jTower = tree.arrays(["jTower_eta", "jTower_phi"], entry_start=0, entry_stop=1)
+    jTower_eta_event = jTower["jTower_eta"][0]
+    jTower_phi_event = jTower["jTower_phi"][0]
+
     start_event, end_event = event_range
     res = []
     masks=[]
@@ -798,13 +802,8 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
     for batch_start in tqdm(range(0, total_events, batch_size), desc="muon_isolation_all_events: Computing muon isolation", leave=False):
         batch_stop = min(batch_start + batch_size, total_events)
         # Load jTower data only for the current batch
-        jTower = tree.arrays(
-            ["jTower_eta", "jTower_phi", "jTower_et_MeV"],
-            entry_start=start_event + batch_start,
-            entry_stop=start_event + batch_stop)
-        #assign eta, phi and et
-        jTower_eta_batch = jTower["jTower_eta"]
-        jTower_phi_batch = jTower["jTower_phi"]
+        jTower = tree.arrays(["jTower_et_MeV"], entry_start=start_event + batch_start, entry_stop=start_event + batch_stop)
+        #assign et
         jTower_et_batch  = jTower["jTower_et_MeV"]
         #get the muon data for the current batch
         muon_eta_batch = muon_eta_all[batch_start:batch_stop]
@@ -819,8 +818,6 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
                 res.append([])
             else:
                 #If the event is not empty compute the isolation
-                jTower_eta_event = jTower_eta_batch[i]
-                jTower_phi_event = jTower_phi_batch[i]
                 jTower_et_event  = jTower_et_batch[i]
 
                 isol_event, mask= muon_isolation_one_event(
@@ -833,7 +830,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
                 if get_mask==True:
                     masks.append(mask)
     #if get_mask is True, return the result and the mask, otherwise just the result
-    if get_mask==True:
+    if get_mask:
         return res, masks
     else:
         return res
@@ -1226,8 +1223,8 @@ def ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias, Zmumu_pt,
     return()
 
 def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                 event_range: tuple = [0,5000], dr_min: float = 0.05, dr_max: float=0.3, target_efficiency: float=0.9,
-                   bins: list = np.linspace(0,1,1000)):
+                 Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000], 
+                 dr_min: float = 0.05, dr_max: float=0.3, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000)):
     """
     Computes the False Positive Rate (FPR) at a given target signal efficiency (TPR)
     for the isolation ROC curves between Zmumu and ZeroBias events.
@@ -1247,9 +1244,10 @@ def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
     dr_min : float, minimum delta R value used in computation.
     dr_max : float, maximum delta R value used in computation (for reference).
     """
-    nmin, nmax= event_range
+    nmin1, nmax1= Zmumu_event_range
+    nmin2, nmax2 = ZeroBias_event_range
     ROC_values, _, _ = compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                            [nmin,nmax],[nmin,nmax], bins, [dr_min], [dr_max])
+                            [nmin1,nmax1],[nmin2,nmax2], bins, [dr_min], [dr_max])
     FPR=ROC_values[0][0]
     TPR=ROC_values[0][1]
     FPR_eff=np.min(FPR[TPR >= target_efficiency])
@@ -1257,7 +1255,8 @@ def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
     return FPR_eff, dr_min, dr_max
 
 def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                 event_range: tuple = [0,5000], dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
+                 Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000],
+                 dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
                  steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000)):
     """
     Reliying on the ROC_FPR_efficieny function, computes and returns the FPR for a given TPR efficieny for a given set of delta R values
@@ -1280,17 +1279,18 @@ def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
     dr_mins=np.linspace(dr_min_range[0], dr_min_range[1], steps)
     dr_maxs=np.linspace(dr_max_range[0], dr_max_range[1], steps)
     FPR_effs=[]
-    for i in tqdm(range(steps), desc="Computing FPRs...", leave=False):
+    for i in range(steps):
         for j in range(len(dr_maxs)):
             dr_min, dr_max = dr_mins[i], dr_maxs[j]
             FPR_eff, _, _=ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-            event_range, dr_min, dr_max, target_efficiency, bins)
+            Zmumu_event_range, ZeroBias_event_range, dr_min, dr_max, target_efficiency, bins)
             FPR_effs.append(FPR_eff)
     FPR_effs = np.array(FPR_effs).reshape((steps, steps))
     return FPR_effs, dr_mins, dr_maxs
 
 def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                 event_range: tuple = [0,5000], dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
+                 Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000],
+                 dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
                  steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000)):
     """
     Plots a scatterplot containing the FPR(target_efficiency) values for a given dr_min, dr_max grid, relying on the ROC_FPR_efficiencies function 
@@ -1310,7 +1310,7 @@ def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmum
     """
     #Compute the FPR
     FPR_effs, dr_mins, dr_maxs= ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                         event_range, dr_min_range, dr_max_range, steps, target_efficiency, bins)
+                         Zmumu_event_range, ZeroBias_event_range, dr_min_range, dr_max_range, steps, target_efficiency, bins)
     
     #Create a 2D grid with the dr values
     y, x = np.meshgrid(dr_maxs,dr_mins)
@@ -1401,7 +1401,7 @@ def generate_random_float_pairs(min_val, max_val, n, min_diff=0.2):
 
 
 #------------------------------------------------------------------------
-def quality_selector_with_empty(quality_data, muon_data, value):
+def quality_selector_with_empty(quality_data, muon_data, value: int=0):
     """
     Filters muons within each event based on quality == value.
     Preserves event structure: outputs empty lists for events with no muons passing the cut.
@@ -1422,7 +1422,7 @@ def quality_selector_with_empty(quality_data, muon_data, value):
     return filtered_muon_data
 
 
-def energy_cut_with_empty(energy_array, muon_array, lower_cut=14*10**3, upper_cut=np.inf, verbose: bool=False):
+def energy_cut_with_empty(energy_array, muon_array, lower_cut: float=14*10**3, upper_cut: float=np.inf, verbose: bool=False):
     """
     Select muons within energy range. Keeps original event indices.
     Events not passing the cut become empty lists to keep array length.
@@ -1444,11 +1444,35 @@ def energy_cut_with_empty(energy_array, muon_array, lower_cut=14*10**3, upper_cu
     filtered_muons = muon_array[mask_muons]
     #Print if desired
     if verbose:
-        print(f"energy_cut_keep_indices: {
-            np.round(len(filtered_muons[ak.num(filtered_muons)>0]) / len(muon_array) * 100, 2)}% of events survived the cut.")
+        print(f"energy_cut_with_empty: {np.round(len(filtered_muons[ak.num(filtered_muons)>0]) / len(muon_array) * 100, 2)}% of events survived the cut.")
 
     return filtered_muons
+##################################################################################################
 
-
-
+def array_compare(arr1, arr2, verbose: bool = False):
+    
+    """
+    This function compares two arrays and says whether or not they are equal. If they are not equal but have the same length, it will return
+    the positions (indices) of the elements that are not equal
+    """
+    if len(arr1) == len(arr2):
+        mask = arr1 == arr2
+        diff=0
+        indx=[]
+        for i, elem in enumerate(mask):
+            for val in elem:
+                if not val:
+                    diff=diff+1
+                    indx.append(i)
+        if diff == 0:
+                if verbose:
+                     print("Arrays are completely equal")
+        else:
+            if verbose:
+                print("Arrays differ in", diff, "elements, located at indices", indx)
+    else:
+        if verbose:
+            print("Arrays don't have the same length")
+    
+    return(indx)
 # %%
