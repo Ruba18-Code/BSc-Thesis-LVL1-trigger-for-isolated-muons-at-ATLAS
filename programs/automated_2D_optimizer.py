@@ -29,16 +29,16 @@ ZeroBias_phi1=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTr
 ZeroBias_pt1=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 ##################################################################################################################################33
-points=1
-iterations=1
-next_dr_mins=np.linspace(0,0.2,points)
-next_dr_maxs=np.linspace(0.3,1,points)
+points=4
+iterations=3
+next_dr_mins=np.linspace(0,0.15,points)
+next_dr_maxs=np.linspace(0.25,0.5,points)
 
 min_range=[min(next_dr_mins), max(next_dr_mins)]
 max_range=[min(next_dr_maxs), max(next_dr_maxs)]
 
 FPR_effs, dr_mins, dr_maxs= ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt1, Zmumu_eta1, Zmumu_phi1, ZeroBias_pt1, ZeroBias_eta1,
-                 ZeroBias_phi1, [nmin1,nmax1], [nmin2, nmax2], min_range, max_range, points)
+                 ZeroBias_phi1, [nmin1,nmax1], [nmin2, nmax2], min_range, max_range, points, bins=np.linspace(0,2,1000))
 
 #Get flat position the first 5 indices of the sorted array
 flat_indices = np.argsort(FPR_effs, axis=None)[:5] 

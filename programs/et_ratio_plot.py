@@ -11,35 +11,37 @@ MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 #Prepare the data for the plots
 
 #Choose the range of events to plot
-nmin=0
-nmax=10000
+nmin1=0
+nmax1=4000
 dr_min=0.09
 dr_max=0.3
 
 #Select quality 0 Z->mumu
-Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin:nmax]
-Zmumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin:nmax]
-Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin:nmax]
+Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
+Zmumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
+Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
 
 #And select the Z peak pairs
 Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 
+nmin2=0
+nmax2=50000
 #Select the ZeroBias data with energy cut
-ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin:nmax]
-ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin:nmax]
-ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin:nmax]
+ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
+ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
+ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 # %%
 #Check how many events are not empty
-non_empty_count1= ak.sum(ak.num(ZeroBias_eta[nmin:nmax]) > 0)
-non_empty_count2 = ak.sum(ak.num(Zmumu_eta[nmin:nmax]) > 0)
+non_empty_count1= ak.sum(ak.num(ZeroBias_eta[nmin2:nmax2]) > 0)
+non_empty_count2 = ak.sum(ak.num(Zmumu_eta[nmin1:nmax1]) > 0)
 
 #Compute the isolation and prepare it for plotting ZeroBias
-res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,dr_min,dr_max,[nmin,nmax],1500)
+res=muon_isolation_all_events(MuonTree_ZeroBias,ZeroBias_eta,ZeroBias_phi,dr_min,dr_max,[nmin2,nmax2],1500)
 data1=ak.flatten(res)
 
 #Compute the isolation and prepare it for plotting Z mu mu
-res=muon_isolation_all_events(MuonTree_Zmumu,Zmumu_eta,Zmumu_phi,dr_min,dr_max,[nmin,nmax],1500)
+res=muon_isolation_all_events(MuonTree_Zmumu,Zmumu_eta,Zmumu_phi,dr_min,dr_max,[nmin1,nmax1],1500)
 data2=ak.flatten(res)
 
 # %%
