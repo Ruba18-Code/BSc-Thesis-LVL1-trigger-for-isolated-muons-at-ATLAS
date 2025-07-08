@@ -46,12 +46,12 @@ bins=np.linspace(0,1.5*10**5,50)
 colors=['r','b']
 x_label=r"Muon transverse momentum $p_T$ (MeV)"
 y_label="Counts"
-title=r"Muon counts vs $p_T$ ATLAS Detector"
-label1=rf'Z $\longrightarrow \mu \mu$ data, muons={l1}'
-label2=f'Zero Bias data, muons={l2}'
+title=r"$p_T$ histogram"
+label1=rf'Z $\longrightarrow \mu \mu$, muons={l1}'
+label2=f'Zero Bias, muons={l2}'
 labels=[label1,label2]
 
-coolplot(data,bins,colors,labels,x_label,y_label,title)
+coolplot(data,bins,colors,labels,x_label,y_label,title, collect_overflow=False)
 # %%
 data1=Zmumu_eta
 data2=ZeroBias_eta
