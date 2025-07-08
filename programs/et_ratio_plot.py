@@ -12,24 +12,24 @@ MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 
 #Choose the range of events to plot
 nmin1=0
-nmax1=4000
-dr_min=0.09
+nmax1=10000
+dr_min=0.1
 dr_max=0.3
 
 #Select quality 0 Z->mumu
-Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
-Zmumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
-Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
+Zmumu_pt=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
+Zmumu_eta=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
+Zmumu_phi=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
 
 #And select the Z peak pairs
 Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 
 nmin2=0
-nmax2=50000
+nmax2=140000
 #Select the ZeroBias data with energy cut
-ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
-ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
-ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
+ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
+ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
+ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 # %%
 #Check how many events are not empty
@@ -90,7 +90,7 @@ axs[0].plot(x_regression, y_regression1, color="black",
             label=fr"Zero Bias: y = {slope1:.2e}x + {intercept1:.2f}")
 axs[0].set_xlabel("Transverse Energy (MeV)")
 axs[0].set_ylabel(r"$\frac{E_{T,iso}}{E_{T}}$")
-axs[0].set_title("Zero Bias")
+axs[0].set_title(f"Zero Bias, muons={len(e1_np)}")
 axs[0].legend()
 axs[0].grid(alpha=0.5, linestyle="--")
 axs[0].set_xlim(10000, xlim)
@@ -103,7 +103,7 @@ h2 = axs[1].hist2d(e2_np, ratio2_np, bins=bins, range=[[10000, xlim], [0, ylim]]
 axs[1].plot(x_regression, y_regression2, color="black",
             label=fr"Z $\to \mu\mu$: y = {slope2:.2e}x + {intercept2:.2f}")
 axs[1].set_xlabel("Transverse Energy (MeV)")
-axs[1].set_title(r"Z $\to \mu\mu$")
+axs[1].set_title(rf"Z $\to \mu\mu$, muons={len(e2_np)}")
 axs[1].legend()
 axs[1].grid(alpha=0.5, linestyle="--")
 axs[1].set_xlim(10000, xlim)

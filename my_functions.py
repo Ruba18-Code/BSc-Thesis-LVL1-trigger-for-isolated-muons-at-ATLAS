@@ -372,6 +372,11 @@ def get_all_Z_peak_pairs(pt_events, eta_events, phi_events):
 def quality_selector(quality_data, muon_data, value, verbose=False):
 
     """
+    ---------------------------------------------------------------------------------------------------------------------------
+    NOTE: this function DOES NOT preserve the event indices in their original array, because it creates a smaller array.
+    This function should NOT be used to compute isolations, because there will be a mismatch between muon and jTower indices
+    Use quality_selector_with_empty instead
+    ----------------------------------------------------------------------------------------------------------------------------
     This function is designed to select only the events that match a certain quality.
 
     Inputs:
@@ -1163,7 +1168,8 @@ def optimise_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
 def ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias, Zmumu_pt,
                             Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
                             ZeroBias_phi, scaling_range: tuple=[0.5,2], amount_of_curves: int=4, dr_range: tuple=[0.05,0.3],
-                            event_range: tuple=[0, 2000], bin_range: tuple=[0,1], amount_of_bins: int=0):
+                            Zmumu_event_range: tuple=[0, 2000], ZeroBias_event_range: tuple = [0, 40000],
+                            bin_range: tuple=[0,1], amount_of_bins: int=0):
     """
     This function plots and compares ROC curves for different scaling factors applied
     to the noise cuts during the isolation.
@@ -1193,18 +1199,19 @@ def ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias, Zmumu_pt,
     scaling=np.linspace(smin,smax,amount_of_curves)
     #Define bins
     bmin, bmax= bin_range
-    nmin, nmax= event_range
+    nmin1, nmax1= Zmumu_event_range
+    nmin2, nmax2 = ZeroBias_event_range
     if amount_of_bins == 0:
-        amount_of_bins=5*int(np.sqrt(nmax-nmin))
+        amount_of_bins=5*int(np.sqrt(nmax2-nmin2))
         
-    bins=np.linspace(bmin,bmax,5*int(np.sqrt(nmax-nmin)))
+    bins=np.linspace(bmin,bmax,5*int(np.sqrt(nmax2-nmin2)))
     #Initialize empty lists
     c=[]
     legend=[]
     #Compute ROC curves for different scaling factors
     for i in range(len(scaling)):
         c.append(compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta,
-                    ZeroBias_phi, [nmin,nmax],[nmin,nmax],bins,[dr_min],[dr_max], scaling=scaling[i])[0])
+                    ZeroBias_phi, [nmin1,nmax1],[nmin2,nmax2],bins,[dr_min],[dr_max], scaling=scaling[i])[0])
     #Plot each curve
     for i, curve in enumerate(c):
         plt.plot(curve[0][0],curve[0][1], marker=".")
@@ -1327,6 +1334,11 @@ def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmum
 ##############################################################################################################################33
 def energy_cut(energy_array, muon_array, lower_cut= 14*10**3, upper_cut=np.inf):
     """
+    ---------------------------------------------------------------------------------------------------------------------------
+    NOTE: this function DOES NOT preserve the event indices in their original array, because it creates a smaller array.
+    This function should NOT be used to compute isolations, because there will be a mismatch between muon and jTower indices
+    Use quality_selector_with_empty instead
+    ----------------------------------------------------------------------------------------------------------------------------
     The idea of this function is to take an energy array (or pt array using the massless approximation) and select events that are 
     contained in a certain energy range [lower_cut, upper_cut]. It also removes events with no muons.
 

@@ -11,29 +11,32 @@ file= uproot.open("/home/ruben/Escritorio/BachelorThesisRuben/Data/Muon_trees.ro
 MuonTree_ZeroBias=file["MuonTree_ZeroBias;1"]
 MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 
-nmin=3000
-nmax=6000
+nmin1=0
+nmax1=6000
 #Select quality 0 Z->mumu
-Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin:nmax]
-Zmumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin:nmax]
-Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin:nmax]
+Zmumu_pt=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
+Zmumu_eta=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
+Zmumu_phi=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
 #And select the Z peak pairs
 Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 #Select the ZeroBias data with energy cut
-ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin:nmax]
-ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin:nmax]
-ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin:nmax]
+
+nmin2=0
+nmax2=100000
+ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
+ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
+ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 # %%
 #------------------1st subplot------------------------------------------------------------------------------------------------
 #Set scaling factor
 scaling=0.5
 #Set dr
-dr_min=0.05
-dr_max=0.32
+dr_min=0.1
+dr_max=0.3
 #Compute isolation
-res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
-res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2], scaling=scaling)
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin1,nmax1], scaling=scaling)
 #Compute ratio
 data1=ak.flatten(res1)/ak.flatten(ZeroBias_pt)
 data2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
@@ -58,8 +61,8 @@ coolplot(data_1, bins, colors, labels, x_label, y_label, title, ax=axis[0, 0])
 #Set scaling factor
 scaling=1
 #Compute isolation
-res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
-res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2], scaling=scaling)
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin1,nmax1], scaling=scaling)
 #Compute ratio
 data1=ak.flatten(res1)/ak.flatten(ZeroBias_pt)
 data2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
@@ -82,8 +85,8 @@ coolplot(data_2, bins, colors, labels, x_label, y_label, title, ax=axis[0, 1])
 #Set scaling factor
 scaling=1.2
 #Compute isolation
-res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
-res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2], scaling=scaling)
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin1,nmax1], scaling=scaling)
 #Compute ratio
 data1=ak.flatten(res1)/ak.flatten(ZeroBias_pt)
 data2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
@@ -106,8 +109,8 @@ coolplot(data_3, bins, colors, labels, x_label, y_label, title, ax=axis[1, 0])
 #Set scaling factor
 scaling=1.5
 #Compute isolation
-res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
-res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2], scaling=scaling)
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin1,nmax1], scaling=scaling)
 #Compute ratio
 data1=ak.flatten(res1)/ak.flatten(ZeroBias_pt)
 data2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
@@ -131,8 +134,8 @@ coolplot(data_4, bins, colors, labels, x_label, y_label, title, ax=axis[1, 1])
 #Set scaling factor
 scaling=1.8
 #Compute isolation
-res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
-res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2], scaling=scaling)
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin1,nmax1], scaling=scaling)
 #Compute ratio
 data1=ak.flatten(res1)/ak.flatten(ZeroBias_pt)
 data2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
@@ -156,8 +159,8 @@ coolplot(data_5, bins, colors, labels, x_label, y_label, title, ax=axis[2, 0])
 #Set scaling factor
 scaling=2
 #Compute isolation
-res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
-res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax], scaling=scaling)
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2], scaling=scaling)
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin1,nmax1], scaling=scaling)
 #Compute ratio
 data1=ak.flatten(res1)/ak.flatten(ZeroBias_pt)
 data2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
@@ -181,7 +184,8 @@ plt.show()
 # %%
 fig, axis = plt.subplots(1,1 , figsize=(8, 6))
 ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias,Zmumu_pt,Zmumu_eta,Zmumu_phi,
-                          ZeroBias_pt, ZeroBias_eta, ZeroBias_phi, event_range=[nmin,nmax], bin_range=[0,0.5], amount_of_curves=4)
+                          ZeroBias_pt, ZeroBias_eta, ZeroBias_phi, Zmumu_event_range=[nmin1,nmax1], 
+                          ZeroBias_event_range=[nmin2, nmax2], bin_range=[0,0.5], amount_of_curves=4)
 
 # %%
 

@@ -13,32 +13,33 @@ MuonTree_ZeroBias=file1["MuonTree;1"]
 MuonTree_Zmumu=file2["MuonTree_Zmumu"]
 ZeroBias_pt=MuonTree_ZeroBias["muon_pt"].array()
 
-nmin=0
-nmax=2000
-dr_min=0.2
-dr_max=0.6
 
-ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin:nmax]
-ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin:nmax]
-ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin:nmax]
-ZeroBias_e=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_e"].array())[nmin:nmax]
-ZeroBias_charge=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_charge"].array())[nmin:nmax]
+dr_min=0.1
+dr_max=0.3
 
+nmin1=0
+nmax1=6000
 #Select quality 0 Z->mumu
-Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin:nmax]
-Zmumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin:nmax]
-Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin:nmax]
-
+Zmumu_pt=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
+Zmumu_eta=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
+Zmumu_phi=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
 #And select the Z peak pairs
 Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
+#Select the ZeroBias data with energy cut
+
+nmin2=0
+nmax2=100000
+ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
+ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
+ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 
 # %%
 coolplot([ZeroBias_pt, Zmumu_pt], np.linspace(0,2*10**5, 50))
 
 # %%
-res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin,nmax])
-res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin,nmax])
+res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2])
+res2=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, dr_min, dr_max, [nmin1,nmax1])
 
 # %%
 coolplot([res1,res2], np.linspace(0,10000,50))
@@ -54,7 +55,7 @@ dr_min=[0.2,0.3,0.1,0.04]
 dr_max=[0.8,0.6,0.4,0.26]
 
 plot_ROC_curve(MuonTree_Zmumu,MuonTree_ZeroBias,Zmumu_pt,Zmumu_eta,Zmumu_phi,ZeroBias_pt,ZeroBias_eta,ZeroBias_phi,
-               [nmin,nmax],[nmin,nmax],np.linspace(0,1,5*int(np.sqrt(nmax-nmin))),dr_min,dr_max)
+               [nmin1,nmax1],[nmin2,nmax2],np.linspace(0,1,5*int(np.sqrt(nmax2-nmin2))),dr_min,dr_max)
 
 # %%
 

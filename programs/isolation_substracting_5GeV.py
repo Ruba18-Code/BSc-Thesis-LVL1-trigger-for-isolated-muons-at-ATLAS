@@ -10,31 +10,31 @@ file= uproot.open("/home/ruben/Escritorio/BachelorThesisRuben/Data/Muon_trees.ro
 MuonTree_ZeroBias=file["MuonTree_ZeroBias;1"]
 MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 
-#Select range of events
-nmin=0
-nmax=10000
-
-dr_min=0.09
+dr_min=0.1
 dr_max=0.3
+#Select range of events
+nmin1=100
+nmax1=4000
+
 #Select quality 0 Z->mumu
-Zmumu_pt=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin:nmax]
-Zmumu_eta=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin:nmax]
-Zmumu_phi=quality_selector(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin:nmax]
-
+Zmumu_pt=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
+Zmumu_eta=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
+Zmumu_phi=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
 #And select the Z peak pairs
-Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
+Zmumu_pt, Zmumu_eta, Zmumu_phi= get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 
-#Select the ZeroBias data with energy cut
-ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin:nmax]
-ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin:nmax]
-ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin:nmax]
+nmin2=100
+nmax2=100000
+ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
+ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
+ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 
 
 # %%
 #Computo isolations
-res1=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, 0.09, 0.30, [nmin, nmax], int((nmax-nmin)/10))
-res2=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, 0.09, 0.30, [nmin, nmax], int((nmax-nmin)/10))
+res1=muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi, 0.09, 0.30, [nmin1, nmax1])
+res2=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, 0.09, 0.30, [nmin2, nmax2])
 
 # %%
 #substract a global value of 5GeV to the isolation energies, and set negative results to 0
