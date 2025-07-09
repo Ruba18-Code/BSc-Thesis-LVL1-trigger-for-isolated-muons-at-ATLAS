@@ -33,9 +33,9 @@ Z_mumu_pt=MuonTree_Zmumu["muon_pt"].array()
 Z_mumu_quality=MuonTree_Zmumu["muon_quality"].array()
 
 #Assign eta and phi variables Zmumu
-Zmumu_eta=quality_selector(Z_mumu_quality,Z_mumu_eta,0)[Z_mumu_nmin1:Z_mumu_nmax1]
-Zmumu_phi=quality_selector(Z_mumu_quality,Z_mumu_phi,0)[Z_mumu_nmin1:Z_mumu_nmax1]
-Zmumu_pt=quality_selector(Z_mumu_quality,Z_mumu_pt,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+Zmumu_eta=quality_selector_with_empty(Z_mumu_quality,Z_mumu_eta,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+Zmumu_phi=quality_selector_with_empty(Z_mumu_quality,Z_mumu_phi,0)[Z_mumu_nmin1:Z_mumu_nmax1]
+Zmumu_pt=quality_selector_with_empty(Z_mumu_quality,Z_mumu_pt,0)[Z_mumu_nmin1:Z_mumu_nmax1]
 
 #And select the Z peak pairs
 Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
@@ -48,9 +48,9 @@ ZeroBias_nmin1=5000
 ZeroBias_nmax1=7000
 
 #Assign eta and phi variables Zero Bias
-ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
-ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
-ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
+ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
+ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
+ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[ZeroBias_nmin1:ZeroBias_nmax1]
 
 #Check how many events are not empty
 ZeroBias_non_empty_count = ak.sum(ak.num(ZeroBias_eta) > 0)

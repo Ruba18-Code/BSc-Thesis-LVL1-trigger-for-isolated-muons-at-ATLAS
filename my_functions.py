@@ -80,7 +80,7 @@ def histogram2errors(data1, data2, nbins, x_range, x_label, y_label, title_label
     plt.show()
 
 
-def coolplot(data,bins,colors=["#0072B2", "#FD0000", 'g'],labels=["data1", "data2", "data3"],x_label="xlabel",y_label="ylabel",title="hist",
+def coolplot(data,bins,colors=["r", "b", 'g'],labels=[rf'Z $\longrightarrow \mu \mu$ data', f'Zero Bias data', "data3"],x_label="xlabel",y_label="ylabel",title="hist",
              plot_show=True, ax=None, collect_overflow=True):
     """
     This function is designed to create a comparative histogram of N sets of data with their respective errorbars included.
@@ -158,12 +158,12 @@ def coolplot(data,bins,colors=["#0072B2", "#FD0000", 'g'],labels=["data1", "data
     axis.set_xlabel(x_label)
     axis.set_ylabel(y_label)
     axis.set_title(title)
-    axis.legend()
+    axis.legend(fontsize=8)
     axis.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
     #PLot if plot_show is True
     if plot_show and ax is None:
-        plt.show()
+        plt.show(block=False)
 
 
 #--------------------------------------------------------------------------------
@@ -909,7 +909,7 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
 
 def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                     Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=1, title=fr"ROC Curve - Comparing different $\Delta R$ ranges",
-                    plot_show=True):
+                    plot_show=True, Zoom=False):
 
     """
     This function plots the ROC curve for a given delta r range.
@@ -952,27 +952,28 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
     ax.plot([0, 1], [0, 1], linestyle='--', color="black")
     ax.plot([0, 1], [0.9, 0.9], linestyle="--", color="red")
 
-    #This part of the code draws the zoom inset
-    # Create the zoom inset
-    bbox = (0.1, 0.65, 0.3, 0.3)  
-    axins = inset_axes(ax,
-                  width="100%", height="100%",  
-                  bbox_to_anchor=bbox,
-                  bbox_transform=ax.transAxes,
-                  loc='lower left',
-                  borderpad=0)
-    # Plot same data in inset
-    for i in range(len(ROC_curve)):
-        axins.plot(ROC_curve[i][0], ROC_curve[i][1], marker=".")
-    # Set zoom limits
-    x1, x2 = 0.825, 0.835
-    y1, y2 = 0.895, 0.91
-    axins.set_xlim(x1, x2)
-    axins.set_ylim(y1, y2)
-    axins.grid(alpha=0.5, linestyle="--")
-    axins.axhline(0.9, linestyle='--', color='red')
-    # Draw a box and lines to connect inset to zoomed area
-    mark_inset(ax, axins, loc1=1, loc2=4, fc="none", ec="0.5", linestyle='--')
+    if Zoom:
+        #This part of the code draws the zoom inset
+        # Create the zoom inset
+        bbox = (0.1, 0.65, 0.3, 0.3)  
+        axins = inset_axes(ax,
+                    width="100%", height="100%",  
+                    bbox_to_anchor=bbox,
+                    bbox_transform=ax.transAxes,
+                    loc='lower left',
+                    borderpad=0)
+        # Plot same data in inset
+        for i in range(len(ROC_curve)):
+            axins.plot(ROC_curve[i][0], ROC_curve[i][1], marker=".")
+        # Set zoom limits
+        x1, x2 = 0.825, 0.835
+        y1, y2 = 0.895, 0.91
+        axins.set_xlim(x1, x2)
+        axins.set_ylim(y1, y2)
+        axins.grid(alpha=0.5, linestyle="--")
+        axins.axhline(0.9, linestyle='--', color='red')
+        # Draw a box and lines to connect inset to zoomed area
+        mark_inset(ax, axins, loc1=1, loc2=4, fc="none", ec="0.5", linestyle='--')
     if plot_show:
         plt.show()
 
@@ -1225,7 +1226,7 @@ def ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias, Zmumu_pt,
     plt.tight_layout() 
     plt.plot([0,1],[0,1], linestyle='--', color="black")
     plt.plot([0,1],[0.9,0.9], linestyle="--", color="red")
-    plt.show()
+    plt.show(block=False)
 
     return()
 

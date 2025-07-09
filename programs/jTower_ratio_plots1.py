@@ -16,14 +16,14 @@ dr_min=0.0
 dr_max=0.4
 
 nmin1=0
-nmax1=2000
+nmax1=5000
 
 nmin2=0
-nmax2=2000
+nmax2=20000
 
-ZeroBias_eta=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
-ZeroBias_phi=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
-ZeroBias_pt=energy_cut(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
+ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
+ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
+ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 # %%
 """
@@ -38,7 +38,7 @@ eta_events=MuonTree_Zmumu["muon_eta"].array()[nmin1:nmax1]
 phi_events=MuonTree_Zmumu["muon_phi"].array()[nmin1:nmax1]
 
 data1=ak.flatten(pt_events)
-isolation =muon_isolation_all_events(MuonTree_Zmumu, eta_events, phi_events, dr_min, dr_max, [nmin1,nmax1], 1000)
+isolation =muon_isolation_all_events(MuonTree_Zmumu, eta_events, phi_events, dr_min, dr_max, [nmin1,nmax1])
 data2=ak.flatten(isolation)
 
 ratio1=data2/data1
@@ -65,9 +65,9 @@ Z -> mu mu vs ZeroBias offline QUALITY 0
 """
 
 #Compute the isolation for Z->mu mu events
-pt_events=quality_selector(MuonTree_Zmumu["muon_quality"].array(), MuonTree_Zmumu["muon_pt"].array(), 0)[nmin1:nmax1]
-eta_events=quality_selector(MuonTree_Zmumu["muon_quality"].array(), MuonTree_Zmumu["muon_eta"].array(), 0)[nmin1:nmax1]
-phi_events=quality_selector(MuonTree_Zmumu["muon_quality"].array(), MuonTree_Zmumu["muon_phi"].array(), 0)[nmin1:nmax1]
+pt_events=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(), MuonTree_Zmumu["muon_pt"].array(), 0)[nmin1:nmax1]
+eta_events=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(), MuonTree_Zmumu["muon_eta"].array(), 0)[nmin1:nmax1]
+phi_events=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(), MuonTree_Zmumu["muon_phi"].array(), 0)[nmin1:nmax1]
 
 data1=ak.flatten(pt_events)
 isolation =muon_isolation_all_events(MuonTree_Zmumu, eta_events, phi_events, dr_min, dr_max, [nmin1,nmax1], 1000)
@@ -100,7 +100,7 @@ def f(i,ax):
 
         #Plot the data
         coolplot([ratio1,ratio2],
-                        np.linspace(0,0.5,40),
+                        np.linspace(0,1,40),
                         colors,labels,
                         "Isolation / Transverse energy","Counts",
                 "ANY quality case",
@@ -113,7 +113,7 @@ def f(i,ax):
 
         #Plot the data
         coolplot([ratio3,ratio4],
-                        np.linspace(0,0.5,40),
+                        np.linspace(0,1,40),
                         colors,labels,
                         "Isolation / Transverse energy","Counts",
                 "Quality 0 case",

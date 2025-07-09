@@ -30,7 +30,7 @@ Zmumu_charge=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),
 Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 
 nmin2=0
-nmax2=140000
+nmax2=200000
 #Select the ZeroBias data with energy cut
 ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
 ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
@@ -42,7 +42,7 @@ data2=ZeroBias_pt
 l1=len(ak.flatten(data1))
 l2=len(ak.flatten(data2))
 data=[data1,data2]
-bins=np.linspace(0,1.5*10**5,50)
+bins=np.linspace(0,1*10**5,50)
 colors=['r','b']
 x_label=r"Muon transverse momentum $p_T$ (MeV)"
 y_label="Counts"
@@ -51,7 +51,7 @@ label1=rf'Z $\longrightarrow \mu \mu$, muons={l1}'
 label2=f'Zero Bias, muons={l2}'
 labels=[label1,label2]
 
-coolplot(data,bins,colors,labels,x_label,y_label,title, collect_overflow=False)
+coolplot(data,bins,colors,labels,x_label,y_label,title)
 # %%
 data1=Zmumu_eta
 data2=ZeroBias_eta
