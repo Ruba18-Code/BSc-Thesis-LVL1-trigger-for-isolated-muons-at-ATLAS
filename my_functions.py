@@ -5,6 +5,7 @@ import scipy as sp #math and science package
 import awkward as ak #root files are usually awkward arrays 
 import matplotlib.pyplot as plt #plot stuff
 from matplotlib.patches import Rectangle
+import os
 import itertools
 from tqdm import tqdm #generated progress bars and estimates the computation time
 from numba import njit #numba helps to speed up calculations if the code is written in a certain way
@@ -1543,7 +1544,7 @@ def offline_LVL1_matcher(offline_eta, offline_phi, LVL1_eta, LVL1_phi, dr_thresh
 
         #Compute delta phi
         phidif=arr1-arr2
-
+        phidif= phidif + np.pi % (2 * np.pi) - np.pi
         #Compute delta r squared
         dr=etadif**2+phidif**2
 
