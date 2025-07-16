@@ -31,11 +31,11 @@ nmin2=0
 nmax2=100000
 ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
 ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
-ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
-
+ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())
+print(len(ZeroBias_pt[ak.num(ZeroBias_pt) > 0]))
 
 # %%
-coolplot([ZeroBias_pt, Zmumu_pt], np.linspace(0,2*10**5, 50))
+coolplot([Zmumu_pt, ZeroBias_pt], np.linspace(0,2*10**5, 50))
 
 # %%
 res1=muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi, dr_min, dr_max, [nmin2,nmax2])
@@ -51,11 +51,11 @@ ratio2=ak.flatten(res2)/ak.flatten(Zmumu_pt)
 coolplot([ratio1,ratio2], np.linspace(0,0.4,50))
 
 # %%
-dr_min=[0.2,0.3,0.1,0.04]
-dr_max=[0.8,0.6,0.4,0.26]
+dr_min=[0.1]
+dr_max=[0.3]
 
 plot_ROC_curve(MuonTree_Zmumu,MuonTree_ZeroBias,Zmumu_pt,Zmumu_eta,Zmumu_phi,ZeroBias_pt,ZeroBias_eta,ZeroBias_phi,
-               [nmin1,nmax1],[nmin2,nmax2],np.linspace(0,1,5*int(np.sqrt(nmax2-nmin2))),dr_min,dr_max)
+               [nmin1,nmax1],[nmin2,nmax2],np.linspace(0,1,1000),dr_min,dr_max)
 
 # %%
 

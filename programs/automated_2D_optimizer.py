@@ -13,7 +13,7 @@ MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 
 #Select range of events
 nmin1=0
-nmax1=4000
+nmax1=100000
 
 #Select quality 0 Z->mumu
 Zmumu_pt=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
@@ -23,22 +23,22 @@ Zmumu_phi=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),Muo
 Zmumu_pt1, Zmumu_eta1, Zmumu_phi1= get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 
 nmin2=0
-nmax2=100000
+nmax2=200000
 ZeroBias_eta1=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
 ZeroBias_phi1=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
 ZeroBias_pt1=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
 
 ##################################################################################################################################33
-points=4
-iterations=3
-next_dr_mins=np.linspace(0,0.15,points)
-next_dr_maxs=np.linspace(0.25,0.5,points)
+points=3
+iterations=1
+next_dr_mins=np.linspace(0,0.3,points)
+next_dr_maxs=np.linspace(1.0,3.0,points)
 
 min_range=[min(next_dr_mins), max(next_dr_mins)]
 max_range=[min(next_dr_maxs), max(next_dr_maxs)]
 
 FPR_effs, dr_mins, dr_maxs= ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt1, Zmumu_eta1, Zmumu_phi1, ZeroBias_pt1, ZeroBias_eta1,
-                 ZeroBias_phi1, [nmin1,nmax1], [nmin2, nmax2], min_range, max_range, points, bins=np.linspace(0,2,1000))
+                 ZeroBias_phi1, [nmin1,nmax1], [nmin2, nmax2], min_range, max_range, points, bins=np.linspace(0,5,2000))
 
 #Get flat position the first 5 indices of the sorted array
 flat_indices = np.argsort(FPR_effs, axis=None)[:5] 

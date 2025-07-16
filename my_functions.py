@@ -163,7 +163,7 @@ def coolplot(data,bins,colors=["r", "b", 'g'],labels=[rf'Z $\longrightarrow \mu 
     plt.tight_layout()
     #PLot if plot_show is True
     if plot_show and ax is None:
-        plt.show(block=False)
+        plt.show()
 
 
 #--------------------------------------------------------------------------------
@@ -677,7 +677,7 @@ def jTower_assign_cuts(tree, start: int=0, stop: int=1, scaling: float =1.0):
                     [1,1.1],[1.1,1.2],[1.2,1.3],[1.3,1.4],[1.4,1.5],[1.5,1.6],[1.6,1.7],[1.7,1.8],[1.8,1.9],[1.9,2],
                     [2,2.1],[2.1,2.2],[2.2,2.3],[2.3,2.4],[2.4,2.5],[2.5,2.7],[2.7,2.9],[2.9,3.1],[3.1,3.2])
     
-    EM_cuts=scaling * np.array([1150, 1150, 1200, 1150, 1100, 1100, 1050, 1050, 1000, 1000, 950, 950, 900, 850, 1300, 1150,
+    EM_cuts=scaling *  np.array([1150, 1150, 1200, 1150, 1100, 1100, 1050, 1050, 1000, 1000, 950, 950, 900, 850, 1300, 1150,
                        1050, 1000, 1050, 950, 950, 900, 850, 900, 800, 2150, 2000, 1800, 1100], dtype=np.float32)
 
     HAD_cuts= scaling * np.array([0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,500 ,950 ,850 ,700 ,750 ,700 ,650 ,650, 600,
@@ -876,14 +876,24 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
     for i in tqdm(range(len(dr_min)), desc="Computing ROC curve", colour="green", leave=False):
         # Compute Z->mu mu isolation for a given dr_min and dr_max
         Zmumu_isolation = muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi,
-                                                    dr_min[i], dr_max[i], [nmin1, nmax1], 500, scaling=scaling)
-        events_Zmumu.append(len(Zmumu_isolation))
+                                                    dr_min[i], dr_max[i], [nmin1, nmax1], scaling=scaling)
+        aux=ak.Array(Zmumu_isolation)
+        aux=ak.flatten(aux)
+        aux=np.array(aux)
+        aux=aux[~np.isnan(aux)]
+
+        events_Zmumu.append(len(aux))
         Zmumu_data = ak.flatten(Zmumu_isolation)
 
         #Compute ZeroBias isolation for a given dr_min and dr_max
         ZeroBias_isolation = muon_isolation_all_events(MuonTree_ZeroBias, ZeroBias_eta, ZeroBias_phi,
-                                                        dr_min[i], dr_max[i], [nmin2, nmax2], 500, scaling=scaling)
-        events_ZeroBias.append(len(ZeroBias_isolation))
+                                                        dr_min[i], dr_max[i], [nmin2, nmax2], scaling=scaling)
+        
+        aux=ak.Array(ZeroBias_isolation)
+        aux=ak.flatten(aux)
+        aux=np.array(aux)
+        aux=aux[~np.isnan(aux)]
+        events_ZeroBias.append(len(aux))
         ZeroBias_data = ak.flatten(ZeroBias_isolation)
 
         # Get the ratio of isolation to pt
@@ -940,8 +950,11 @@ def plot_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_
 
     # Plot ROC curves
     for i in range(len(ROC_curve)):
+        TPR90=(np.array(ROC_curve[i][1]))>0.9
+        FPR90=(np.array(ROC_curve[i][0]))[TPR90]
+        FPR90=np.round(min(FPR90),3)
         plt.plot(ROC_curve[i][0], ROC_curve[i][1], marker=".", label=fr"$\Delta R$=[{np.round(dr_min[i],1)}, {np.round(dr_max[i],1)}]")
-        legend.append(f"ΔR = [{np.round(dr_min[i], 2)}, {np.round(dr_max[i], 2)}]\nEvents = {events_Zmumu[i]}")
+        legend.append(f"ΔR = [{np.round(dr_min[i], 2)}, {np.round(dr_max[i], 2)}]\n FPR90={FPR90}, n = {events_Zmumu[i]}")
 
     # Axis labels and grid
     ax.set_xlabel("False Positive Rate (FPR)")
@@ -1232,7 +1245,7 @@ def ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias, Zmumu_pt,
 
 def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                  Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000], 
-                 dr_min: float = 0.05, dr_max: float=0.3, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000)):
+                 dr_min: float = 0.05, dr_max: float=0.3, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1):
     """
     Computes the False Positive Rate (FPR) at a given target signal efficiency (TPR)
     for the isolation ROC curves between Zmumu and ZeroBias events.
@@ -1255,7 +1268,7 @@ def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
     nmin1, nmax1= Zmumu_event_range
     nmin2, nmax2 = ZeroBias_event_range
     ROC_values, _, _ = compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                            [nmin1,nmax1],[nmin2,nmax2], bins, [dr_min], [dr_max])
+                            [nmin1,nmax1],[nmin2,nmax2], bins, [dr_min], [dr_max], scaling=scaling)
     FPR=ROC_values[0][0]
     TPR=ROC_values[0][1]
     FPR_eff=np.min(FPR[TPR >= target_efficiency])
@@ -1265,7 +1278,7 @@ def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
 def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                  Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000],
                  dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
-                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000)):
+                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1):
     """
     Reliying on the ROC_FPR_efficieny function, computes and returns the FPR for a given TPR efficieny for a given set of delta R values
 
@@ -1290,16 +1303,21 @@ def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
     for i in range(steps):
         for j in range(len(dr_maxs)):
             dr_min, dr_max = dr_mins[i], dr_maxs[j]
-            FPR_eff, _, _=ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-            Zmumu_event_range, ZeroBias_event_range, dr_min, dr_max, target_efficiency, bins)
-            FPR_effs.append(FPR_eff)
+            if dr_min != dr_max:
+                FPR_eff, _, _=ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
+                                                  Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
+                Zmumu_event_range, ZeroBias_event_range, dr_min, dr_max, target_efficiency, bins, scaling=scaling)
+
+                FPR_effs.append(FPR_eff)
+            else:
+                FPR_effs.append(np.nan)
     FPR_effs = np.array(FPR_effs).reshape((steps, steps))
     return FPR_effs, dr_mins, dr_maxs
 
 def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                  Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000],
                  dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
-                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000)):
+                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1):
     """
     Plots a scatterplot containing the FPR(target_efficiency) values for a given dr_min, dr_max grid, relying on the ROC_FPR_efficiencies function 
 
@@ -1318,7 +1336,7 @@ def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmum
     """
     #Compute the FPR
     FPR_effs, dr_mins, dr_maxs= ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                         Zmumu_event_range, ZeroBias_event_range, dr_min_range, dr_max_range, steps, target_efficiency, bins)
+                         Zmumu_event_range, ZeroBias_event_range, dr_min_range, dr_max_range, steps, target_efficiency, bins, scaling)
     
     #Create a 2D grid with the dr values
     y, x = np.meshgrid(dr_maxs,dr_mins)
@@ -1488,4 +1506,51 @@ def array_compare(arr1, arr2, verbose: bool = False):
             print("Arrays don't have the same length")
     
     return(indx)
+
+def offline_LVL1_matcher(offline_eta, offline_phi, LVL1_eta, LVL1_phi, dr_threshold: float = 0.4):
+    dr_threshold=dr_threshold**2
+    if len(offline_eta) == len(LVL1_eta) == len(offline_phi) == len(LVL1_phi):
+        arr1=offline_eta
+        arr2=LVL1_eta
+
+        # Assuming arr1 and arr2 are Awkward Arrays
+        l_off = ak.num(arr1)  # Length of each element in arr1
+        l_l1 = ak.num(arr2)   # Length of each element in arr2
+
+        # Create a mask where the lengths are the same
+        l_mask = l_off == l_l1
+
+        # Use the mask to set elements in arr1 and arr2 to empty arrays where lengths don't match
+        arr1 = ak.where(l_mask, arr1, ak.Array([[]]*len(arr1)))
+        arr2 = ak.where(l_mask, arr2, ak.Array([[]]*len(arr2)))
+
+        #Compute delta eta
+        etadif=arr1-arr2
+
+        arr1=offline_phi
+        arr2=LVL1_phi
+
+        # Assuming arr1 and arr2 are Awkward Arrays
+        l_off = ak.num(arr1)  # Length of each element in arr1
+        l_l1 = ak.num(arr2)   # Length of each element in arr2
+
+        # Create a mask where the lengths are the same
+        l_mask = l_off == l_l1
+
+        # Use the mask to set elements in arr1 and arr2 to empty arrays where lengths don't match
+        arr1 = ak.where(l_mask, arr1, ak.Array([[]]*len(arr1)))
+        arr2 = ak.where(l_mask, arr2, ak.Array([[]]*len(arr2)))
+
+        #Compute delta phi
+        phidif=arr1-arr2
+
+        #Compute delta r squared
+        dr=etadif**2+phidif**2
+
+        mask= dr <= dr_threshold**2
+    else:
+        raise ValueError("Offline and LVL1 data inputs must have the same lenght") 
+
+    return mask
+
 # %%
