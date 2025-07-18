@@ -1509,49 +1509,19 @@ def array_compare(arr1, arr2, verbose: bool = False):
     return(indx)
 
 def offline_LVL1_matcher(offline_eta, offline_phi, LVL1_eta, LVL1_phi, dr_threshold: float = 0.4):
-    dr_threshold=dr_threshold**2
-    if len(offline_eta) == len(LVL1_eta) == len(offline_phi) == len(LVL1_phi):
-        arr1=offline_eta
-        arr2=LVL1_eta
+    mask_total=[]
+    dr_theshold=dr_threshold**2
 
-        # Assuming arr1 and arr2 are Awkward Arrays
-        l_off = ak.num(arr1)  # Length of each element in arr1
-        l_l1 = ak.num(arr2)   # Length of each element in arr2
+    for event_eta, event_phi, lvl1_event_eta, lvl1_event_phi in tqdm(zip(offline_eta, offline_phi, LVL1_eta, LVL1_phi)):
+        mask_event=[]
+        for muon_eta, muon_phi in zip(event_eta, event_phi):
+            d_eta=muon_eta-lvl1_event_eta
+            d_phi=muon_phi-lvl1_event_phi
+            d_phi=d_phi + np.pi % (2 * np.pi) - np.pi
+            dr=d_eta**2+d_phi**2
+            mask_event.append(np.any(dr <= dr_theshold, axis=-1))
+        mask_total.append(mask_event)
 
-        # Create a mask where the lengths are the same
-        l_mask = l_off == l_l1
-
-        # Use the mask to set elements in arr1 and arr2 to empty arrays where lengths don't match
-        arr1 = ak.where(l_mask, arr1, ak.Array([[]]*len(arr1)))
-        arr2 = ak.where(l_mask, arr2, ak.Array([[]]*len(arr2)))
-
-        #Compute delta eta
-        etadif=arr1-arr2
-
-        arr1=offline_phi
-        arr2=LVL1_phi
-
-        # Assuming arr1 and arr2 are Awkward Arrays
-        l_off = ak.num(arr1)  # Length of each element in arr1
-        l_l1 = ak.num(arr2)   # Length of each element in arr2
-
-        # Create a mask where the lengths are the same
-        l_mask = l_off == l_l1
-
-        # Use the mask to set elements in arr1 and arr2 to empty arrays where lengths don't match
-        arr1 = ak.where(l_mask, arr1, ak.Array([[]]*len(arr1)))
-        arr2 = ak.where(l_mask, arr2, ak.Array([[]]*len(arr2)))
-
-        #Compute delta phi
-        phidif=arr1-arr2
-        phidif= phidif + np.pi % (2 * np.pi) - np.pi
-        #Compute delta r squared
-        dr=etadif**2+phidif**2
-
-        mask= dr <= dr_threshold**2
-    else:
-        raise ValueError("Offline and LVL1 data inputs must have the same lenght") 
-
-    return mask
+    return mask_total
 
 # %%
