@@ -1509,17 +1509,26 @@ def array_compare(arr1, arr2, verbose: bool = False):
     return(indx)
 
 def offline_LVL1_matcher(offline_eta, offline_phi, LVL1_eta, LVL1_phi, dr_threshold: float = 0.4):
+
+    #Empty list
     mask_total=[]
+    #Square threshold, since we actually compute dr squared
     dr_theshold=dr_threshold**2
 
+    #zip offline and LVL1 eta and phi (events)
     for event_eta, event_phi, lvl1_event_eta, lvl1_event_phi in tqdm(zip(offline_eta, offline_phi, LVL1_eta, LVL1_phi)):
         mask_event=[]
+        #zip offline muons
         for muon_eta, muon_phi in zip(event_eta, event_phi):
+            #compute deltas
             d_eta=muon_eta-lvl1_event_eta
             d_phi=muon_phi-lvl1_event_phi
+            #keep modulo 2pi
             d_phi=d_phi + np.pi % (2 * np.pi) - np.pi
             dr=d_eta**2+d_phi**2
+            #append true in any is true, false otherwise, at muon level
             mask_event.append(np.any(dr <= dr_theshold, axis=-1))
+        #append result at event level
         mask_total.append(mask_event)
 
     return mask_total
