@@ -844,7 +844,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
     
 #####################################################################################################################################3
 def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=1):
+                    Zmumu_range,ZeroBias_range, bins, dr_min, dr_max, scaling=1, use_ratio=True):
     
     """
     This function computes the ROC curve for a given delta r range.
@@ -874,7 +874,7 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
     events_Zmumu=[]
     events_ZeroBias=[]
     #Loop over the different dr_min and dr_max
-    for i in tqdm(range(len(dr_min)), desc="Computing ROC curve", colour="green", leave=False):
+    for i in range(len(dr_min)):
         # Compute Z->mu mu isolation for a given dr_min and dr_max
         Zmumu_isolation = muon_isolation_all_events(MuonTree_Zmumu, Zmumu_eta, Zmumu_phi,
                                                     dr_min[i], dr_max[i], [nmin1, nmax1], scaling=scaling)
@@ -897,13 +897,20 @@ def compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias,Zmumu_pt, Zmumu_eta, Zmu
         events_ZeroBias.append(len(aux))
         ZeroBias_data = ak.flatten(ZeroBias_isolation)
 
-        # Get the ratio of isolation to pt
-        Zmumu_ratio = Zmumu_data / Zmumu_pt
-        ZeroBias_ratio = ZeroBias_data / ZeroBias_pt
+        if use_ratio:
+            # Get the ratio of isolation to pt
+            Zmumu_ratio = Zmumu_data / Zmumu_pt
+            ZeroBias_ratio = ZeroBias_data / ZeroBias_pt
 
-        # Generate histogram counts (don't plot, just get the counts)
-        Zmumu_counts, _ = np.histogram(Zmumu_ratio, bins)
-        ZeroBias_counts, _ = np.histogram(ZeroBias_ratio, bins)
+            # Generate histogram counts (don't plot, just get the counts)
+            Zmumu_counts, _ = np.histogram(Zmumu_ratio, bins)
+            ZeroBias_counts, _ = np.histogram(ZeroBias_ratio, bins)
+        
+        else:
+            # Generate histogram counts (don't plot, just get the counts)
+            Zmumu_counts, _ = np.histogram(Zmumu_data, bins)
+            ZeroBias_counts, _ = np.histogram(ZeroBias_data, bins)
+        
         
         #Compute the cumulative sum of the counts (like integrating the histogram to the left)
         Zmumu_cumulative_counts = np.cumsum(Zmumu_counts)
@@ -1246,7 +1253,8 @@ def ROC_curve_compare_scaling(MuonTree_Zmumu,MuonTree_ZeroBias, Zmumu_pt,
 
 def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                  Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000], 
-                 dr_min: float = 0.05, dr_max: float=0.3, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1):
+                 dr_min: float = 0.05, dr_max: float=0.3, target_efficiency: float=0.9,
+                bins: list = np.linspace(0,1,1000), scaling: int=1, use_ratio=True):
     """
     Computes the False Positive Rate (FPR) at a given target signal efficiency (TPR)
     for the isolation ROC curves between Zmumu and ZeroBias events.
@@ -1269,7 +1277,8 @@ def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
     nmin1, nmax1= Zmumu_event_range
     nmin2, nmax2 = ZeroBias_event_range
     ROC_values, _, _ = compute_ROC_curve(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                            [nmin1,nmax1],[nmin2,nmax2], bins, [dr_min], [dr_max], scaling=scaling)
+                            [nmin1,nmax1],[nmin2,nmax2], bins, [dr_min], [dr_max], scaling=scaling, 
+                            use_ratio=use_ratio)
     FPR=ROC_values[0][0]
     TPR=ROC_values[0][1]
     FPR_eff=np.min(FPR[TPR >= target_efficiency])
@@ -1279,7 +1288,7 @@ def ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Z
 def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                  Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000],
                  dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
-                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1):
+                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1, use_ratio=True):
     """
     Reliying on the ROC_FPR_efficieny function, computes and returns the FPR for a given TPR efficieny for a given set of delta R values
 
@@ -1301,13 +1310,17 @@ def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
     dr_mins=np.linspace(dr_min_range[0], dr_min_range[1], steps)
     dr_maxs=np.linspace(dr_max_range[0], dr_max_range[1], steps)
     FPR_effs=[]
+    n=1
     for i in range(steps):
         for j in range(len(dr_maxs)):
+            print("Step", n, "out of", steps**2)
+            n=n+1
             dr_min, dr_max = dr_mins[i], dr_maxs[j]
             if dr_min != dr_max:
                 FPR_eff, _, _=ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
                                                   Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                Zmumu_event_range, ZeroBias_event_range, dr_min, dr_max, target_efficiency, bins, scaling=scaling)
+                Zmumu_event_range, ZeroBias_event_range, dr_min, dr_max, target_efficiency, bins, scaling=scaling, 
+                use_ratio=use_ratio)
 
                 FPR_effs.append(FPR_eff)
             else:
@@ -1318,7 +1331,7 @@ def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
 def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                  Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000],
                  dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
-                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1):
+                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1, use_ratio=True):
     """
     Plots a scatterplot containing the FPR(target_efficiency) values for a given dr_min, dr_max grid, relying on the ROC_FPR_efficiencies function 
 
@@ -1337,7 +1350,8 @@ def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmum
     """
     #Compute the FPR
     FPR_effs, dr_mins, dr_maxs= ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
-                         Zmumu_event_range, ZeroBias_event_range, dr_min_range, dr_max_range, steps, target_efficiency, bins, scaling)
+                         Zmumu_event_range, ZeroBias_event_range, dr_min_range, dr_max_range, steps,
+                           target_efficiency, bins, scaling, use_ratio)
     
     #Create a 2D grid with the dr values
     y, x = np.meshgrid(dr_maxs,dr_mins)

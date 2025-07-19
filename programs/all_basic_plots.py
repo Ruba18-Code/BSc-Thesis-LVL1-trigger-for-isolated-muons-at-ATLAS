@@ -2,41 +2,49 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from my_functions import*
-# %%
-file= uproot.open("/home/ruben/Escritorio/BachelorThesisRuben/Data/Muon_trees.root") #opening the Root file with Uproot 
+#Open Zmumu file
+file= uproot.open("/home/ruben/Escritorio/BachelorThesisRuben/Data/Muon_trees.root") 
+MuonTree_Zmumu=file["MuonTree_Zmumu;1"]
 
-file.keys() #Here we can see the keys of the file (index)
-
-# %%
-MuonTree_Zmumu=file["MuonTree_Zmumu;1"] 
-MuonTree_ZeroBias=file["MuonTree_ZeroBias;1"]
-
-MuonTree_Zmumu.show() #Let's see which plots can we do. We're going to focus on the offline muons (the ones with name muon_something).
-                      #We're going to plot the Zmumu data together with the 0 bias (background) in order to compare them.
-
-# %%
-#Set the range of events to plot
+#Set event range
 nmin1=0
-nmax1=10000
+nmax1=3000
 
-#Select quality 0 Z->mumu
+#Choose quality 0
 Zmumu_pt=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_pt"].array(),0)[nmin1:nmax1]
 Zmumu_eta=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_eta"].array(),0)[nmin1:nmax1]
 Zmumu_phi=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_phi"].array(),0)[nmin1:nmax1]
 Zmumu_e=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_e"].array(),0)[nmin1:nmax1]
 Zmumu_charge=quality_selector_with_empty(MuonTree_Zmumu["muon_quality"].array(),MuonTree_Zmumu["muon_charge"].array(),0)[nmin1:nmax1]
+#Select the Z peak pairs
+Zmumu_pt, Zmumu_eta, Zmumu_phi= get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
 
-#And select the Z peak pairs
-Zmumu_pt, Zmumu_eta, Zmumu_phi = get_all_Z_peak_pairs(Zmumu_pt,Zmumu_eta,Zmumu_phi)
+#Open ZeroBias file
+file= uproot.open("/home/ruben/Escritorio/BachelorThesisRuben/Data/zbV3_skim.root") 
+MuonTree_ZeroBias=file["MuonTree;1"]
 
-nmin2=0
-nmax2=200000
-#Select the ZeroBias data with energy cut
-ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())[nmin2:nmax2]
-ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())[nmin2:nmax2]
-ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())[nmin2:nmax2]
-ZeroBias_e=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_e"].array())[nmin2:nmax2]
-ZeroBias_charge=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_charge"].array())[nmin2:nmax2]
+#Apply energy cut to offline
+ZeroBias_pt=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_pt"].array())
+ZeroBias_eta=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_eta"].array())
+ZeroBias_phi=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_phi"].array())
+ZeroBias_e=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_e"].array())
+ZeroBias_charge=energy_cut_with_empty(MuonTree_ZeroBias["muon_pt"].array(), MuonTree_ZeroBias["muon_charge"].array())
+
+#Get online data
+Zbl1_pt=MuonTree_ZeroBias["LVL1Muon_et"].array() * 1000
+Zbl1_eta=MuonTree_ZeroBias["LVL1Muon_eta"].array()
+Zbl1_phi=MuonTree_ZeroBias["LVL1Muon_phi"].array()
+
+#Create mask matching offline and LVL1
+mask=offline_LVL1_matcher(ZeroBias_eta, ZeroBias_phi, Zbl1_eta, Zbl1_phi)
+
+#Apply mask
+ZeroBias_pt=ZeroBias_pt[mask]
+ZeroBias_eta=ZeroBias_eta[mask]
+ZeroBias_phi=ZeroBias_phi[mask]
+ZeroBias_e=ZeroBias_e[mask]
+ZeroBias_charge=ZeroBias_charge[mask]
+
 data1=Zmumu_pt
 data2=ZeroBias_pt
 l1=len(ak.flatten(data1))
@@ -51,7 +59,9 @@ label1=rf'Z $\longrightarrow \mu \mu$, muons={l1}'
 label2=f'Zero Bias, muons={l2}'
 labels=[label1,label2]
 
-coolplot(data,bins,colors,labels,x_label,y_label,title)
+coolplot(data,bins,colors,labels,x_label,y_label,title, collect_overflow=False, plot_show=False)
+plt.savefig('pt_hist.pdf', format='pdf')
+plt.show()
 # %%
 data1=Zmumu_eta
 data2=ZeroBias_eta
@@ -68,8 +78,9 @@ label1=rf'Z $\longrightarrow \mu \mu$ data, muons={l1}'
 label2=f'Zero Bias data, muons={l2}'
 labels=[label1,label2]
 
-coolplot(data,bins,colors,labels,x_label,y_label,title)
-
+coolplot(data,bins,colors,labels,x_label,y_label,title, collect_overflow=False, plot_show=False)
+plt.savefig('eta_hist.pdf', format='pdf')
+plt.show()
 # %%
 data1=Zmumu_phi
 data2=ZeroBias_phi
@@ -86,8 +97,9 @@ label1=rf'Z $\longrightarrow \mu \mu$ data, muons={l1}'
 label2=f'Zero Bias data, muons={l2}'
 labels=[label1,label2]
 
-coolplot(data,bins,colors,labels,x_label,y_label,title)
-
+coolplot(data,bins,colors,labels,x_label,y_label,title, collect_overflow=False, plot_show=False)
+plt.savefig('phi_hist.pdf', format='pdf')
+plt.show()
 # %%
 data1=Zmumu_e
 data2=ZeroBias_e
@@ -104,8 +116,9 @@ label1=rf'Z $\longrightarrow \mu \mu$ data, muons={l1}'
 label2=f'Zero Bias data, muons={l2}'
 labels=[label1,label2]
 
-coolplot(data,bins,colors,labels,x_label,y_label,title)
-
+coolplot(data,bins,colors,labels,x_label,y_label,title, collect_overflow=False, plot_show=False)
+plt.savefig('e_hist.pdf', format='pdf')
+plt.show()
 # %%
 data1=Zmumu_charge
 data2=ZeroBias_charge
@@ -122,4 +135,6 @@ label1=rf'Z $\longrightarrow \mu \mu$ data, muons={l1}'
 label2=f'Zero Bias data, muons={l2}'
 labels=[label1,label2]
 
-coolplot(data,bins,colors,labels,x_label,y_label,title)
+coolplot(data,bins,colors,labels,x_label,y_label,title, collect_overflow=False, plot_show=False)
+plt.savefig('charge_hist.pdf', format='pdf')
+plt.show()
