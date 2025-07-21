@@ -10,6 +10,8 @@ import itertools
 from tqdm import tqdm #generated progress bars and estimates the computation time
 from numba import njit #numba helps to speed up calculations if the code is written in a certain way
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset #zoom inset
+from matplotlib.colors import Normalize, LinearSegmentedColormap
+import pandas as pd
 
 
 def histogram(data, nbins, x_range,  x_label, y_label, title_label):
@@ -451,13 +453,14 @@ def delta_r(etapairs, phipairs):
 
 def rate_calculator(data,cut,scaling_factor):
 
+    """
     #This function aims to compute the rate of events that are above a certain cut
     #Example: our data is muon energy, we say cut=10000MeV, then the function will return
     #the fraction of events that are above this cut (rate) and an array with these events (aux)
 
     #moreover, 'scaling' allows us to scale the rate (by default between 0 and 1), choose scaling=1 if no scaling is needed
     #in my case, scaling=40*10⁶*(2340/3564)Hz since this is the frequency of filled bunch crossings at ATLAS
-
+    """
     #Creates a boolean mask that contains 'True' if the data is above the cut
     data_above_cut = ak.any(data >= cut, axis=-1)
 
@@ -473,13 +476,14 @@ def rate_calculator(data,cut,scaling_factor):
 #---------------------------------------------------------------------------------------
 def jTower_handler(tree, name, xmin, xmax, binsize, chunk_size, xlabel, ylabel, title, showplot):
 
-    # This function aims to manipulate the jTower data
-    # Since these datasets are very large, it divides them into chunks (recommended value: chunk_size= 10000)
-    # It also returns how many chunks have been made ('steps')
-    # Finally, it calculates a histogram with the sum of all the chunk histograms and plots it if showplot is True
+    """
+    This function aims to manipulate the jTower data
+    Since these datasets are very large, it divides them into chunks (recommended value: chunk_size= 10000)
+    It also returns how many chunks have been made ('steps')
+    Finally, it calculates a histogram with the sum of all the chunk histograms and plots it if showplot is True
 
-    # 'name' must be a string of characters like: "muon_et" for instance
-
+    'name' must be a string of characters like: "muon_et" for instance
+    """
     # Initialize these variables
     steps = 0
     hists = []
@@ -1352,11 +1356,11 @@ def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmum
     FPR_effs, dr_mins, dr_maxs= ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                          Zmumu_event_range, ZeroBias_event_range, dr_min_range, dr_max_range, steps,
                            target_efficiency, bins, scaling, use_ratio)
-    
+
     #Create a 2D grid with the dr values
     y, x = np.meshgrid(dr_maxs,dr_mins)
     # Create scatter plot with color representing values
-    plt.scatter(x, y, c=FPR_effs, cmap='Blues_r', s=200, edgecolors='k')  # s controls dot size
+    plt.scatter(x, y, c=FPR_effs, cmap='viridis_r', s=200, edgecolors='k') # s controls dot size
     plt.colorbar(label=fr"FPR({target_efficiency*100}%)")
     plt.xlabel(r"$\Delta R_{min}$")
     plt.ylabel(r"$\Delta R_{max}$")
@@ -1523,6 +1527,10 @@ def array_compare(arr1, arr2, verbose: bool = False):
     return(indx)
 
 def offline_LVL1_matcher(offline_eta, offline_phi, LVL1_eta, LVL1_phi, dr_threshold: float = 0.4):
+    """
+    This function matches offline muon data with online muon data, keeping the offline muons only if they are close
+    to any online muons (closer than dr_theshold)
+    """
 
     #Empty list
     mask_total=[]
@@ -1547,4 +1555,12 @@ def offline_LVL1_matcher(offline_eta, offline_phi, LVL1_eta, LVL1_phi, dr_thresh
 
     return mask_total
 
+def FPR_uncertainty(FPR_value, number_of_muons, TPR_target: float = 0.9):
+    """
+    This function estimates the uncertainty of the FPR value at a TPR=TPR_target, 0.9 by default, assuming it is poissonian
+    """
+
+    err=np.sqrt((FPR_value*(1-FPR_value))/number_of_muons)
+
+    return err
 # %%
