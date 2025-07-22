@@ -82,7 +82,7 @@ def histogram2errors(data1, data2, nbins, x_range, x_label, y_label, title_label
     plt.show()
 
 
-def coolplot(data,bins,colors=["r", "b", 'g'],labels=[rf'Z $\longrightarrow \mu \mu$ data', f'Zero Bias data', "data3"],x_label="xlabel",y_label="ylabel",title="hist",
+def coolplot(data,bins,colors=["r", "b", 'g'],labels=[rf'Z $\to \mu \mu$ data', f'Zero Bias data', "data3"],x_label="xlabel",y_label="ylabel",title="hist",
              plot_show=True, ax=None, collect_overflow=True, xlim=None):
     """
     This function is designed to create a comparative histogram of N sets of data with their respective errorbars included.
@@ -743,7 +743,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
         if get_mask==True:
             masks.append(mask)
         for i in range(len(muon_eta_event)):
-            isolated_energy_event.append(np.nan)
+            isolated_energy_event.append(0)
         return isolated_energy_event, masks
     
     for (eta, phi) in zip(muon_eta_event, muon_phi_event):
@@ -772,7 +772,7 @@ def muon_isolation_one_event(muon_eta_event, muon_phi_event, jTower_eta_event, j
             T=np.sum(result)
             isolated_energy_event.append(T)
         else:
-            isolated_energy_event.append(np.nan)
+            isolated_energy_event.append(0)
             
     
     #if get_mask is True, return the result and the mask, otherwise just the result
@@ -826,7 +826,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
             #Check if the event is empty before starting the calculations. This can reduce the computing time a lot if
             #our data includes many empty events 
             if len(muon_eta_event) == 0:
-                res.append([])
+                res.append([0])
             else:
                 #If the event is not empty compute the isolation
                 jTower_et_event  = jTower_et_batch[i]
