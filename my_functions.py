@@ -11,7 +11,6 @@ from tqdm import tqdm #generated progress bars and estimates the computation tim
 from numba import njit #numba helps to speed up calculations if the code is written in a certain way
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset #zoom inset
 from matplotlib.colors import Normalize, LinearSegmentedColormap
-import pandas as pd
 
 
 def histogram(data, nbins, x_range,  x_label, y_label, title_label):
@@ -84,7 +83,7 @@ def histogram2errors(data1, data2, nbins, x_range, x_label, y_label, title_label
 
 
 def coolplot(data,bins,colors=["r", "b", 'g'],labels=[rf'Z $\longrightarrow \mu \mu$ data', f'Zero Bias data', "data3"],x_label="xlabel",y_label="ylabel",title="hist",
-             plot_show=True, ax=None, collect_overflow=True):
+             plot_show=True, ax=None, collect_overflow=True, xlim=None):
     """
     This function is designed to create a comparative histogram of N sets of data with their respective errorbars included.
     Introduce a data vector, that contains one column for each dataset that has to be plotted data=[[set_a],[set_b],...]
@@ -160,6 +159,8 @@ def coolplot(data,bins,colors=["r", "b", 'g'],labels=[rf'Z $\longrightarrow \mu 
     #Set label, title and style
     axis.set_xlabel(x_label)
     axis.set_ylabel(y_label)
+    if xlim is not None:
+        axis.set_xlim(xlim)
     axis.set_title(title)
     axis.legend(fontsize=8)
     axis.grid(True, linestyle='--', alpha=0.5)
