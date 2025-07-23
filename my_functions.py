@@ -826,7 +826,7 @@ def muon_isolation_all_events(tree,muon_eta_all,muon_phi_all, lower_threshold, u
             #Check if the event is empty before starting the calculations. This can reduce the computing time a lot if
             #our data includes many empty events 
             if len(muon_eta_event) == 0:
-                res.append([0])
+                res.append([])
             else:
                 #If the event is not empty compute the isolation
                 jTower_et_event  = jTower_et_batch[i]
