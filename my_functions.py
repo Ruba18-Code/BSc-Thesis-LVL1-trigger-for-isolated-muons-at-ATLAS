@@ -1323,7 +1323,7 @@ def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
             print("Step", n, "out of", steps**2)
             n=n+1
             dr_min, dr_max = dr_mins[i], dr_maxs[j]
-            if dr_min != dr_max:
+            if dr_max > dr_min:
                 FPR_eff, _, _=ROC_FPR_efficiency(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
                                                   Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                 Zmumu_event_range, ZeroBias_event_range, dr_min, dr_max, target_efficiency, bins, scaling=scaling, 
