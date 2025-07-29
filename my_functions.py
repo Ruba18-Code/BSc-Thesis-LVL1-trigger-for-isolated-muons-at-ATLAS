@@ -1338,7 +1338,8 @@ def ROC_FPR_efficiencies(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta,
 def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmumu_phi, ZeroBias_pt, ZeroBias_eta, ZeroBias_phi,
                  Zmumu_event_range: tuple = [0,5000], ZeroBias_event_range: tuple = [0, 50000],
                  dr_min_range: tuple = [0.0,0.2], dr_max_range: tuple=[0.25,0.45],
-                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1, use_ratio=True):
+                 steps: int = 4, target_efficiency: float=0.9, bins: list = np.linspace(0,1,1000), scaling: int=1, use_ratio=False,
+                 plot_show=True):
     """
     Plots a scatterplot containing the FPR(target_efficiency) values for a given dr_min, dr_max grid, relying on the ROC_FPR_efficiencies function 
 
@@ -1367,9 +1368,10 @@ def ROC_FPR_2D_plot(MuonTree_Zmumu, MuonTree_ZeroBias, Zmumu_pt, Zmumu_eta, Zmum
     plt.colorbar(label=fr"FPR({target_efficiency*100}%)")
     plt.xlabel(r"$\Delta R_{min}$")
     plt.ylabel(r"$\Delta R_{max}$")
-    plt.title(rf"FPR({target_efficiency*100}%) over $\Delta R$ ranges")
+    plt.title(rf"FPR at TPR={target_efficiency} over $\Delta R$ ranges")
     plt.grid(True, alpha=0.5, linestyle='--')
-    plt.show()
+    if plot_show:
+        plt.show()
 
     return FPR_effs, dr_mins, dr_maxs
 ##############################################################################################################################33
